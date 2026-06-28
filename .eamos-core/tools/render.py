@@ -23,6 +23,7 @@ import yamlmini  # noqa: E402
 
 CORE = os.path.dirname(TOOLS)
 ARCHETYPES = os.path.join(CORE, "orchestrator", "archetypes")
+DELIVERABLES = os.path.join(CORE, "orchestrator", "os", "deliverables")
 
 BIND_RE = re.compile(r"\{\{\s*([a-z][a-z0-9_.]*)\s*\}\}")
 # The "verify before the room" label for an assumed value, by output language (RFC-0001 §6).
@@ -131,6 +132,32 @@ def load_archetype(name):
         return yamlmini.load_yaml(fh.read())
 
 
+def load_deliverable(dtype):
+    """The registry entry for a deliverable type (RFC-0002 §4), or None if undeclared."""
+    path = os.path.join(DELIVERABLES, f"{dtype}.yaml")
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as fh:
+        return yamlmini.load_yaml(fh.read())
+
+
+def _resolve_params(reg, requested):
+    """Merge a deliverable's requested params over the registry defaults."""
+    params = (reg or {}).get("params", {}) or {}
+    out = {k: (spec.get("default") if isinstance(spec, dict) else None) for k, spec in params.items()}
+    for k, v in (requested or {}).items():
+        if k != "type":
+            out[k] = v
+    return out
+
+
+def _find_deliverable(manifest, dtype):
+    for d in manifest.get("deliverables", []) or []:
+        if isinstance(d, dict) and d.get("type") == dtype:
+            return d
+    return {"type": dtype}
+
+
 def build_deck_ir(manifest, archetype, altitude=None):
     """Compose the deck-IR and return (deck_ir, acc). Pure and deterministic.
 
@@ -177,25 +204,96 @@ def build_deck_ir(manifest, archetype, altitude=None):
     return deck_ir, acc
 
 
+def build_infographic_ir(manifest, archetype, altitude=None):
+    """Project the same grounded content into an infographic-IR (RFC-0002 §2, §3). A peer of
+    build_deck_ir over the SAME ledger — so a value cannot diverge between the deck and the
+    infographic (RFC-0002 §7). Picks the headline stats, the lead, and the decision asks."""
+    acc = _new_acc()
+    ident = manifest.get("identity", {}) or {}
+    ctx = manifest.get("context", {}) or {}
+    ledger = manifest.get("inputs", {}) or {}
+    content = manifest.get("content", {}) or {}
+    lang = ctx.get("output_lang", "en")
+    altitude = altitude or ident.get("audience_altitude", "")
+    shaping = (archetype.get("altitude_shaping", {}) or {}).get(altitude, {}) or {}
+    effective = apply_overlays(archetype.get("structure", []) or [], shaping)
+
+    lead, stats, asks = "", [], []
+    for sec in effective:
+        c = content.get(sec["id"], {}) if isinstance(content, dict) else {}
+        c = c if isinstance(c, dict) else {}
+        kind = sec.get("kind")
+        if kind == "summary" and not lead:
+            lead = resolve_text(c.get("lead", ""), ledger, acc, lang)
+        elif kind == "kpi_table":
+            for row in c.get("rows", []) or []:
+                mk = row.get("metric_binding")
+                cell = ledger.get(mk) if isinstance(ledger, dict) else None
+                if not isinstance(cell, dict):
+                    acc["unresolved"].add(mk)
+                    stats.append({"label": mk, "value": "??", "assumed": False})
+                    continue
+                acc["used"].add(mk)                       # register provenance for the appendix
+                assumed = cell.get("provenance") == "assumed"
+                if assumed:
+                    acc["assumed"][mk] = cell
+                stat = {"label": cell.get("label", mk),   # raw value + a flag; the SVG colors amber
+                        "value": "" if cell.get("value") is None else str(cell.get("value")),
+                        "assumed": assumed}
+                if row.get("target_binding"):
+                    stat["target"] = resolve_value(row["target_binding"], ledger, acc, lang)
+                stats.append(stat)
+        elif kind == "decision_list":
+            asks = [resolve_text(d, ledger, acc, lang) for d in (c.get("decisions", []) or [])]
+
+    reg = load_deliverable("infographic")
+    params = _resolve_params(reg, _find_deliverable(manifest, "infographic"))
+    review_appendix = [
+        {"binding": k, "value": "" if ledger[k].get("value") is None else str(ledger[k].get("value")),
+         "assumption": ledger[k].get("assumption", ""), "fill_from": ledger[k].get("fill_from", "")}
+        for k in sorted(acc["assumed"])
+    ]
+    info_ir = {
+        "deliverable": "infographic",
+        "orientation": params.get("orientation", "portrait"),
+        "visual_style": params.get("visual_style", "professional"),
+        "detail": params.get("detail", "standard"),
+        "output_lang": lang,
+        "title": manifest.get("objective", ""),
+        "lead": lead,
+        "stats": stats,
+        "asks": asks,
+        "review_appendix": review_appendix,
+    }
+    return info_ir, acc
+
+
 def main():
-    ap = argparse.ArgumentParser(description="Render an EAMOS meeting manifest into a deck-IR.")
+    ap = argparse.ArgumentParser(description="Render an EAMOS meeting manifest into an IR.")
     ap.add_argument("manifest", help="path to a meeting manifest (e.g. examples/qbr-c-level.yaml)")
-    ap.add_argument("--out", help="output path for the deck-IR JSON (default: stdout)")
+    ap.add_argument("--out", help="output path for the IR JSON (default: stdout)")
     ap.add_argument("--altitude", help="override the manifest's audience_altitude (e.g. manager)")
+    ap.add_argument("--ir", choices=["deck", "infographic"], default="deck",
+                    help="which IR projection to emit (default: deck)")
     args = ap.parse_args()
 
     with open(args.manifest, encoding="utf-8") as fh:
         manifest = yamlmini.load_yaml(fh.read())
     archetype = load_archetype(manifest.get("identity", {}).get("archetype", "review"))
-    deck_ir, acc = build_deck_ir(manifest, archetype, altitude=args.altitude)
+    if args.ir == "infographic":
+        ir, acc = build_infographic_ir(manifest, archetype, altitude=args.altitude)
+        kind_note = f"{len(ir['stats'])} stats"
+    else:
+        ir, acc = build_deck_ir(manifest, archetype, altitude=args.altitude)
+        kind_note = f"{len(ir['slides'])} slides"
 
-    text = json.dumps(deck_ir, indent=2, ensure_ascii=False) + "\n"
+    text = json.dumps(ir, indent=2, ensure_ascii=False) + "\n"
     if args.out:
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
         with open(args.out, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
-        print(f"Render: OK — deck-IR -> {args.out} "
-              f"({len(deck_ir['slides'])} slides, {len(deck_ir['review_appendix'])} to verify)")
+        print(f"Render: OK — {args.ir}-IR -> {args.out} "
+              f"({kind_note}, {len(ir['review_appendix'])} to verify)")
     else:
         sys.stdout.write(text)
     return 0

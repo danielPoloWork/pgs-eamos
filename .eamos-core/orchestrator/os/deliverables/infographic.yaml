@@ -1,0 +1,13 @@
+# Deliverable: infographic (infographic-IR -> SVG). Schema: _schema.md. RFC-0002 §4, §11-1.
+type: infographic
+ir_family: infographic-IR
+params:
+  orientation:  { enum: [landscape, portrait, square], default: portrait }
+  visual_style: { enum: [didactic, bento, bricks, scientific, professional], default: professional }
+  detail:       { enum: [concise, standard, detailed], default: standard }
+  intent:       { kind: free_text }                         # e.g. "blue theme, highlight 3 key stats"
+emitter: emit_svg
+# The canonical, deterministic layout templates (RFC-0002 §11-1: 6–8). The generative layer
+# touches content only, never the layout — so the render stays reproducible. `professional` ships
+# first; the rest are added as data + an emit_svg template each.
+layouts: [professional, scientific, didactic, bento, bricks]

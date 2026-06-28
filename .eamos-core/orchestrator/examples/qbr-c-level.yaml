@@ -19,9 +19,10 @@ context:                            # axis 4
 
 objective: "Approvare il re-forecast H2 e i 3 rischi major del trimestre."
 
-# The deliverable bundle requested (RFC-0002 §4). M1 renders the presentation.
+# The deliverable bundle requested (RFC-0002 §4). One ledger feeds every projection (§7).
 deliverables:
   - { type: presentation, format: speaker, length: medium }
+  - { type: infographic, orientation: portrait, visual_style: professional, detail: standard }
 
 # The typed inputs ledger (RFC-0001 §6). Every quantitative claim is a cell here; prose binds
 # cells with {{key}}. `sourced` renders plainly; `assumed` renders labeled + into the appendix.
