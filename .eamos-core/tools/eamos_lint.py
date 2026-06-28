@@ -74,6 +74,29 @@ def gate_params_in_bounds(manifest, archetype):
                      f"{dtype}.{param}='{d[param]}' not allowed at {altitude} (allow: {allow})")
 
 
+def gate_registry_params(manifest):
+    """Every deliverable's params are within the registry's declared enums (RFC-0002 §4)."""
+    for d in manifest.get("deliverables", []) or []:
+        if not isinstance(d, dict):
+            continue
+        dtype = d.get("type")
+        reg = render.load_deliverable(dtype)
+        if reg is None:
+            fail("deliverable-params", f"deliverable type '{dtype}' has no registry entry")
+            continue
+        params = reg.get("params", {}) or {}
+        for k, v in d.items():
+            if k == "type":
+                continue
+            spec = params.get(k)
+            if spec is None:
+                fail("deliverable-params", f"{dtype}.{k} is not a declared param of '{dtype}'")
+                continue
+            enum = spec.get("enum") if isinstance(spec, dict) else None
+            if enum is not None and v not in enum:
+                fail("deliverable-params", f"{dtype}.{k}='{v}' not in {enum}")
+
+
 def main():
     if len(sys.argv) < 2:
         print("usage: eamos_lint.py <manifest.yaml>")
@@ -88,6 +111,7 @@ def main():
     gate_grounding_labeled(deck_ir, acc, ledger)
     gate_audience_fit(deck_ir, archetype)
     gate_params_in_bounds(manifest, archetype)
+    gate_registry_params(manifest)
 
     if failures:
         print("eamos_lint: FAIL\n")

@@ -1,0 +1,8 @@
+# Deliverable: presentation (slide-IR). Schema: _schema.md. RFC-0002 §4.
+type: presentation
+ir_family: slide-IR
+params:
+  format: { enum: [detailed, speaker], default: speaker }   # detailed = read-alone; speaker = key points
+  length: { enum: [short, medium, long], default: medium }
+  intent: { kind: free_text }                               # shapes form/emphasis, never facts (RFC-0002 §7)
+emitter: emit_pptx

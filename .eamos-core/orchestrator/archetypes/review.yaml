@@ -31,5 +31,6 @@ altitude_shaping:
 deliverable_bounds:
   c-level:
     presentation: { length: { allow: [short, medium] } }
+    infographic:  { visual_style: { allow: [professional, scientific] } }   # no "playful" for a board
 
 gates: [completeness, grounding-labeled, audience-fit]
