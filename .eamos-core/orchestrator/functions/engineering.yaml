@@ -1,0 +1,6 @@
+# Function pack: engineering (RFC-0001 §3, axis 3). Schema: _schema.md.
+function: engineering
+display_name: Engineering
+terminology: { unit: "incidents / SLO", focus: "reliability, root cause" }
+add_sections:
+  - { id: reliability_notes, kind: prose, required: false, after: impact }   # SLO / reliability lens

@@ -1,0 +1,21 @@
+# Archetype profile: post-mortem / RCA (RFC-0001 §3, axis 1). Mirror review.yaml's rigor.
+# A blameless incident review: what happened, the impact, why, and what we will change.
+archetype: post-mortem
+display_name: Post-mortem / RCA
+
+structure:
+  - { id: incident_summary,   kind: summary,       required: true }
+  - { id: timeline,           kind: prose,         required: true }
+  - { id: impact,             kind: prose,         required: true }
+  - { id: five_whys,          kind: prose,         required: true }
+  - { id: corrective_actions, kind: decision_list, required: true }
+
+altitude_shaping:
+  manager: { max_slides: 20, jargon: full, lead_with: detail }
+  c-level:
+    max_slides: 10
+    jargon: none
+    lead_with: recommendation
+    order: [incident_summary, impact, corrective_actions, timeline, five_whys]
+
+gates: [completeness, grounding-labeled, audience-fit]

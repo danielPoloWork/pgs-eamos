@@ -1,0 +1,70 @@
+# rca-eng.yaml — post-mortem @ manager × ENGINEERING. The `post-mortem` archetype; the engineering
+# function pack adds the reliability_notes (SLO lens) section after impact. M3 exit gate.
+schema_version: 1
+
+identity:
+  series_id: platform-incident-reviews
+  instance: "INC-2026-014"
+  series_name: "RCA — INC-2026-014 checkout outage"
+  archetype: post-mortem
+  audience_altitude: manager
+  function: engineering
+
+context:
+  company_size: enterprise
+  industry: fintech
+  regulatory: [SOX]
+  framework: SAFe
+  formality: medium
+  output_lang: it
+
+objective: "Chiudere la RCA dell'outage checkout e approvare le azioni correttive."
+
+deliverables:
+  - { type: presentation, format: detailed, length: medium }
+
+inputs:
+  kpi.downtime:
+    label: "Durata outage"
+    value: "47 min"
+    provided: true
+    source: "status page / incident log"
+    provenance: sourced
+  kpi.users_affected:
+    label: "Utenti impattati"
+    value: "~12.000"
+    provided: false
+    provenance: assumed
+    assumption: "stima da traffico medio; placeholder — confermare da analytics"
+    fill_from: "analytics / funnel checkout"
+    review_required: true
+  kpi.slo_error_budget:
+    label: "Error budget consumato"
+    value: "32%"
+    provided: true
+    source: "SLO dashboard"
+    provenance: sourced
+
+content:
+  incident_summary:
+    title: "Sommario incidente"
+    lead: "Outage checkout di {{kpi.downtime}}, ~{{kpi.users_affected}} utenti impattati."
+    points:
+      - "Innescato da un deploy con migrazione DB non retro-compatibile."
+  timeline:
+    title: "Timeline"
+    body: "14:02 deploy · 14:05 picco errori 5xx · 14:30 rollback avviato · 14:49 servizio ripristinato."
+  impact:
+    title: "Impatto"
+    body: "Checkout non disponibile per {{kpi.downtime}}; ~{{kpi.users_affected}} utenti; nessuna perdita dati."
+  reliability_notes:
+    title: "Note di affidabilità (SLO)"
+    body: "Error budget consumato {{kpi.slo_error_budget}}; SLO mensile a rischio se si ripete. Aggiungere canary + gate di migrazione."
+  five_whys:
+    title: "5 perché"
+    body: "Perché outage? migrazione incompatibile. Perché in prod? nessun gate di migrazione. Perché nessun gate? non previsto in pipeline. → azione."
+  corrective_actions:
+    title: "Azioni correttive"
+    decisions:
+      - "Introdurre un gate di compatibilità migrazione in CI."
+      - "Abilitare il canary deploy sul checkout."
