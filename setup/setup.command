@@ -1,0 +1,20 @@
+#!/bin/sh
+# setup.command — macOS double-click entry for the guided EAMOS installer.
+#
+# Double-clicking this in Finder opens Terminal and runs it; it simply delegates to setup.sh next
+# to it. Kept as a thin shim so all the install logic lives in one place. On Linux just run
+# setup.sh from a terminal.
+
+unset CDPATH   # so a user's CDPATH can't redirect the cd below
+dir=$(cd -- "$(dirname -- "$0")" && pwd)
+sh "$dir/setup.sh" "$@"
+status=$?
+
+# When launched by double-click (a real terminal), pause so the window does not vanish before the
+# output can be read. Skipped under a pipe (e.g. tests / scripted use).
+if [ -t 0 ] && [ -t 1 ]; then
+  printf '\nPress Return to close…'
+  read -r _ || true
+fi
+
+exit "$status"

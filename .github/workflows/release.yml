@@ -1,0 +1,65 @@
+name: release-bundle
+
+# Attach the consumer factory bundle to every published GitHub release, so users can grab the
+# stripped factory without cloning. The human publishes the release (tag + release notes); this
+# workflow only builds the artifacts and uploads them — it never creates or publishes a release.
+#
+# The bundle is `git archive` of the released commit, honoring the `export-ignore` rules in
+# .gitattributes (the factory + agent contract + LICENSE; none of this repo's own plumbing).
+# See .gitattributes for the export-ignore rules (what ships vs what's stripped).
+#
+# It also attaches (M8): a `SHA256SUMS` over every asset — the guided installer's default checksum
+# source (setup.sh / setup.ps1 verify the bundle against it, fail-closed) — and the guided installer
+# scripts themselves (export-ignored from the bundle, since they *download* it), so
+# `releases/latest/download/setup.{sh,ps1}` (and setup.command / setup.bat) are stable links.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write          # upload assets onto the release
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  bundle:
+    name: build & attach bundle + installers + SHA256SUMS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Build the factory bundle (prefix-less; export-ignore strips repo-management files)
+        run: |
+          # No --prefix: the archive's contents sit at the top level, so extracting it at the
+          # root of a user's project repo lands .eamos-core/ there directly (not in a subfolder).
+          git archive --format=tar.gz -o pgs-eamos-bundle.tar.gz HEAD
+          git archive --format=zip    -o pgs-eamos-bundle.zip    HEAD
+      - name: Sanity-check the archive contents
+        run: |
+          set -e
+          listing="$(tar tzf pgs-eamos-bundle.tar.gz)"
+          echo "$listing" | grep -q '^\.eamos-core/tools/render.py$' || { echo "bundle missing the factory"; exit 1; }
+          echo "$listing" | grep -q '^AGENTS\.md$' || { echo "bundle missing the agent contract"; exit 1; }
+          echo "$listing" | grep -Eq '^(CONTRIBUTING|ROADMAP)\.md$' && { echo "bundle leaked a stripped file"; exit 1; } || true
+      - name: Stage the installers and compute SHA256SUMS
+        run: |
+          set -e
+          # The guided installers are export-ignored from the bundle (they download it), so they ship
+          # as standalone assets. Copy them to the root so both the asset names and the SHA256SUMS
+          # entries are basenames (setup.sh / setup.ps1 parse SHA256SUMS by basename).
+          cp setup/setup.sh setup/setup.command setup/setup.ps1 setup/setup.bat .
+          # SHA256SUMS over every attached file — sha256sum's text format ("<hex>  <name>") is exactly
+          # what the installers parse. The bundle line is the installer's default integrity source.
+          sha256sum pgs-eamos-bundle.tar.gz pgs-eamos-bundle.zip \
+                    setup.sh setup.command setup.ps1 setup.bat > SHA256SUMS
+          echo "----- SHA256SUMS -----"; cat SHA256SUMS
+      - name: Attach to the release (version-less names → stable /latest/download links)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            pgs-eamos-bundle.tar.gz pgs-eamos-bundle.zip SHA256SUMS \
+            setup.sh setup.command setup.ps1 setup.bat --clobber
