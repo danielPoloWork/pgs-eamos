@@ -78,12 +78,13 @@ by archetype × altitude); the facilitation deliverables (`facilitation_script`,
 **Exit gate.** the reference QBR renders as a speaker-deck **and** a professional infographic
 **and** a KPI table from one ledger, with no value diverging between them.
 
-**Status.** 🔶 in progress — the deliverable **registry** (`os/deliverables/`, params as validated
-enums), the **infographic-IR** projection + `emit_svg` (deterministic, dependency-free SVG;
-`professional` canonical layout), and the `deliverable-params` + `deliverable-params-in-bounds`
-gates ship. The QBR renders as a **speaker-deck and a professional infographic from one ledger** —
-ARR proven identical in both (no divergence). Remaining: `data-IR` (KPI table → XLSX), `graph-IR`
-(mind map), `quiz-IR`, and the facilitation deliverables.
+**Status.** ✅ **exit gate met.** The deliverable **registry** (`os/deliverables/`, params as
+validated enums), the **infographic-IR** + `emit_svg` (deterministic, dependency-free SVG), the
+**data-IR** + `emit_xlsx` (KPI table, assumed cells yellow-highlighted, zero formulas), and the
+`deliverable-params` + `deliverable-params-in-bounds` gates ship. The QBR renders as a
+**speaker-deck, a professional infographic, and a KPI table from one ledger** — ARR proven
+**identical across all three** (no divergence, RFC-0002 §7). Remaining M2b extras (beyond the exit
+gate): `graph-IR` (mind map), `quiz-IR` (graded/discussion), the facilitation deliverables.
 
 ## M3 — Function packs
 

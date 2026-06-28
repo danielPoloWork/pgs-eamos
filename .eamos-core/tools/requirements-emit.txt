@@ -4,3 +4,5 @@
 #     pip install -r .eamos-core/tools/requirements-emit.txt
 python-pptx>=1.0    # emit_pptx.py — the .pptx board deck
 python-docx>=1.0    # emit_docx.py — the .docx pre-read
+openpyxl>=3.1       # emit_xlsx.py — the .xlsx KPI table
+# (emit_svg.py needs nothing — SVG is text, deterministic + dependency-free.)

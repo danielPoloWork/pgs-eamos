@@ -268,12 +268,68 @@ def build_infographic_ir(manifest, archetype, altitude=None):
     return info_ir, acc
 
 
+def build_data_ir(manifest, archetype, altitude=None):
+    """Project the KPI rows into a data-IR (RFC-0002 §3) — the table/chart family. A peer of the
+    deck-IR over the SAME ledger (§7): the KPI table cannot diverge from the deck or infographic.
+    Each row carries its source (for the hardcode-provenance note) and an assumed flag."""
+    acc = _new_acc()
+    ident = manifest.get("identity", {}) or {}
+    ctx = manifest.get("context", {}) or {}
+    ledger = manifest.get("inputs", {}) or {}
+    content = manifest.get("content", {}) or {}
+    lang = ctx.get("output_lang", "en")
+    altitude = altitude or ident.get("audience_altitude", "")
+    shaping = (archetype.get("altitude_shaping", {}) or {}).get(altitude, {}) or {}
+    effective = apply_overlays(archetype.get("structure", []) or [], shaping)
+
+    rows = []
+    for sec in effective:
+        c = content.get(sec["id"], {}) if isinstance(content, dict) else {}
+        c = c if isinstance(c, dict) else {}
+        if sec.get("kind") != "kpi_table":
+            continue
+        for row in c.get("rows", []) or []:
+            mk = row.get("metric_binding")
+            cell = ledger.get(mk) if isinstance(ledger, dict) else None
+            if not isinstance(cell, dict):
+                acc["unresolved"].add(mk)
+                rows.append({"label": mk, "value": "??", "target": "", "source": "", "assumed": False})
+                continue
+            acc["used"].add(mk)
+            assumed = cell.get("provenance") == "assumed"
+            if assumed:
+                acc["assumed"][mk] = cell
+            rows.append({
+                "label": cell.get("label", mk),
+                "value": "" if cell.get("value") is None else str(cell.get("value")),
+                "target": resolve_value(row["target_binding"], ledger, acc, lang) if row.get("target_binding") else "",
+                "source": cell.get("source") or cell.get("fill_from") or "",
+                "assumed": assumed,
+            })
+
+    reg = load_deliverable("table_chart")
+    params = _resolve_params(reg, _find_deliverable(manifest, "table_chart"))
+    review_appendix = [
+        {"binding": k, "value": "" if ledger[k].get("value") is None else str(ledger[k].get("value")),
+         "assumption": ledger[k].get("assumption", ""), "fill_from": ledger[k].get("fill_from", "")}
+        for k in sorted(acc["assumed"])
+    ]
+    return {
+        "deliverable": "table_chart",
+        "chart": params.get("chart", "none"),
+        "output_lang": lang,
+        "title": manifest.get("objective", ""),
+        "rows": rows,
+        "review_appendix": review_appendix,
+    }, acc
+
+
 def main():
     ap = argparse.ArgumentParser(description="Render an EAMOS meeting manifest into an IR.")
     ap.add_argument("manifest", help="path to a meeting manifest (e.g. examples/qbr-c-level.yaml)")
     ap.add_argument("--out", help="output path for the IR JSON (default: stdout)")
     ap.add_argument("--altitude", help="override the manifest's audience_altitude (e.g. manager)")
-    ap.add_argument("--ir", choices=["deck", "infographic"], default="deck",
+    ap.add_argument("--ir", choices=["deck", "infographic", "data"], default="deck",
                     help="which IR projection to emit (default: deck)")
     args = ap.parse_args()
 
@@ -283,6 +339,9 @@ def main():
     if args.ir == "infographic":
         ir, acc = build_infographic_ir(manifest, archetype, altitude=args.altitude)
         kind_note = f"{len(ir['stats'])} stats"
+    elif args.ir == "data":
+        ir, acc = build_data_ir(manifest, archetype, altitude=args.altitude)
+        kind_note = f"{len(ir['rows'])} rows"
     else:
         ir, acc = build_deck_ir(manifest, archetype, altitude=args.altitude)
         kind_note = f"{len(ir['slides'])} slides"
