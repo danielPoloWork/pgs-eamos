@@ -126,7 +126,10 @@ def gate_confidentiality(manifest):
 def gate_rubric(manifest, deck_ir):
     """Score the deck-IR against the data rubric (RFC-0001 §10). Structural + language-agnostic, so
     a non-English board deck passes in its own output_lang (M7)."""
-    rubric = yamlmini.load_yaml(open(RUBRIC, encoding="utf-8").read()) if os.path.exists(RUBRIC) else {}
+    rubric = {}
+    if os.path.exists(RUBRIC):
+        with open(RUBRIC, encoding="utf-8") as fh:
+            rubric = yamlmini.load_yaml(fh.read())
     ident = manifest.get("identity", {}) or {}
     arch, alt = ident.get("archetype", ""), ident.get("audience_altitude", "")
     crit = (rubric.get(arch, {}) or {}).get(alt)

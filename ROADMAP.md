@@ -184,8 +184,12 @@ cell in a `public` meeting) and `render.py --redact` (masks `pii`/`phi`/`sensiti
 shared ledger → **every projection redacted identically**; the named counterparty never leaks). The
 **rubric is data** (`eval/rubric.yaml`) scored by the `rubric` gate — structural + language-agnostic,
 so the **Italian** board deck passes in its `output_lang`. `os/localization/regions.yaml` carries the
-per-region formality/format norms. Remaining (later): per-region format application, data-residency
-connectors, the M2b extras (graph-IR / quiz-IR).
+per-region formality/format norms.
+
+**Hardening.** A dependency-free **test suite** (`tools/tests/`, 24 tests, run in CI on every PR)
+locks in the invariants: determinism, no-divergence across the IR families, grounding (labeled +
+appendix), overlays (altitude/function), the gates' teeth, series carry-forward, intake dedupe, and
+egress redaction. Remaining (later): per-region format application, data-residency connectors.
 
 ---
 

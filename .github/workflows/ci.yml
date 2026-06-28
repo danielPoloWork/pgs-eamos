@@ -22,6 +22,9 @@ jobs:
       - name: Compile every tool
         run: python -m py_compile .eamos-core/tools/*.py
 
+      - name: Unit tests (loader, render, gates, flows)
+        run: python -m unittest discover -s .eamos-core/tools/tests -p "test_*.py"
+
       - name: Quality gates (eamos_lint on the reference manifest)
         run: python .eamos-core/tools/eamos_lint.py .eamos-core/orchestrator/examples/qbr-c-level.yaml
 
