@@ -7,199 +7,132 @@ milestone ships work an RFC has not ratified.
 
 **Delivery discipline (from EADOS):** ship **one reference meeting end-to-end first**, then
 generalize. QBR @ C-level is the reference instance — the analogue of `pbr-cpp-memory-pool`.
+**Track:** enterprise-deterministic (a typed manifest → reproducible render → gate-checked
+projections), **not** RAG-synthesis over arbitrary sources.
 
-Legend — exit gate per milestone is the transition the milestone must make green.
+`[x]` shipped on `main` · `[ ]` open. A milestone is checked when its **exit gate** is green.
 
 ---
 
-## M1 — Spine + reference meeting (QBR @ C-level), end-to-end
+## Status at a glance
+
+- [x] **M1** — Spine + reference meeting (QBR @ C-level), end-to-end
+- [x] **M2** — Archetype grammar (overlay engine + 7 archetypes)
+- [x] **M2b** — Deliverable families (all six IR families)
+- [x] **M3** — Function packs (axis 3)
+- [x] **M4** — Series manifest — the moat
+- [x] **M5** — Intake & integrations (primitive + connectors)
+- [x] **M6** — Live facilitation & post-meeting
+- [x] **M7** — Quality, localization, confidentiality hardening
+- [x] **Hardening** — dependency-free test suite (25 tests) in CI
+
+**Backlog (open, out of the core):**
+
+- [ ] Jira / Notion API connectors (need credentials; contract documented)
+- [ ] Per-region format application (date/decimal) at render time
+- [ ] Data-residency connectors / egress controls beyond redaction
+- [ ] Function packs **archetype-aware** (so a pack's section only lands where it fits)
+- [ ] More function packs (Sales · Marketing · CS · HR · Finance · Product · R&D · Ops) + rubric cells
+- [ ] More rubric cells (every archetype × altitude) + per-region localization norms applied
+
+> **Not pursued (deliberate):** NotebookLM-style broad ingestion (PDF/URL/audio + RAG) and
+> chat-Q&A-over-corpus. EAMOS stays on the enterprise-deterministic track.
+
+---
+
+## [x] M1 — Spine + reference meeting (QBR @ C-level), end-to-end
 
 > Covers RFC-0001 §4 (lifecycle), §5 (deck-IR), §6 (grounding), §7 (language), §12-F3 (reference);
-> RFC-0002 §3 (ships **slide-IR + doc-IR** — the board deck in both modes, pre-read, agenda).
+> RFC-0002 §3 (slide-IR + doc-IR).
 
-**Goal.** Prove the whole machine on one meeting: a maintainer chats (in their language) →
-EAMOS resolves the QBR @ C-level archetype → writes the meeting manifest (with the inputs ledger)
-→ renders the deck-IR → emits a board deck (PPTX) + pre-read (DOCX) + agenda (MD), all in
-`output_lang`, with assumed values labeled and a review appendix.
+- [x] **Exit gate** — `grounding-labeled` + `completeness` green on `qbr-c-level.yaml`; bundle opens with the review appendix; scored vs the rubric.
+- [x] `os/workflow/workflow.yaml` — the 6-phase state machine (intake → … → follow-up)
+- [x] `review` archetype + `_schema`; the meeting-manifest schema; `examples/qbr-c-level.yaml` (typed inputs ledger)
+- [x] `os/deck-ir/_schema.md` + `tools/render.py` (deterministic deck-IR)
+- [x] `emit_md` (deck/agenda) + `emit_pptx` (board deck) + `emit_docx` (read-alone pre-read w/ KPI table) — the full bundle from one IR
+- [x] `tools/eamos_lint.py` — `completeness`, `grounding-labeled`, `audience-fit`
+- [x] `eval/rubric.md` (narrative) — what a good board deck looks like
 
-**Items.**
-1. `orchestrator/os/workflow/workflow.yaml` — the 6-phase state machine (intake → … → follow-up),
-   schema + the reference instance.
-2. `orchestrator/archetypes/_schema.md` + `archetypes/review.yaml` — the first archetype profile
-   (structure + altitude shaping), mirroring EADOS's profile schema.
-3. The **meeting manifest** schema + `orchestrator/examples/qbr-c-level.yaml` — the reference
-   manifest (the analogue of `reference.yaml`), including the typed inputs ledger.
-4. `orchestrator/os/deck-ir/_schema.md` — the deterministic deck-IR.
-5. `tools/render.py` — manifest + archetype → deck-IR (EADOS renderer adapted).
-6. `tools/emit_pptx.py` / `emit_docx.py` / `emit_md.py` — the cosmetic IR → binary hop via the
-   `pptx`/`docx` skills.
-7. `tools/eamos_lint.py` — self-lint with the first gates: `completeness`, `grounding-labeled`.
-8. `eval/rubric.md` — "what good looks like" for a board deck (1-page exec summary, decision-ask,
-   options+trade-offs, financial impact, clear recommendation).
+## [x] M2 — Archetype grammar
 
-**Exit gate.** `grounding-labeled` + `completeness` green on `qbr-c-level.yaml`; the rendered
-bundle opens and contains the review appendix; the run scores against the rubric.
+> Covers RFC-0001 §3 (axes + overlays).
 
-**Status.** ✅ **complete.** Deterministic core + gates in the baseline; the **full deliverable
-bundle** ships from one deck-IR — `emit_md` (deck / agenda), `emit_pptx` (board deck),
-`emit_docx` (read-alone pre-read with a KPI table) — all in `output_lang`, assumed values flagged
-in amber, with the "verify before the room" appendix.
+- [x] **Exit gate** — the same manifest renders at two altitudes; a second archetype renders end-to-end.
+- [x] Overlay engine in `render.py` — drop → reorder → slide-cap, deterministic, never a cross-product
+- [x] Altitude overlays (`c-level / vp / manager / ic`); `audience-fit` gate
+- [x] `decision` archetype + `examples/esc-decision.yaml`
+- [x] **Archetype library: seven** — `review` · `decision` · `post-mortem` · `planning` · `retrospective` · `discovery` · `one_on_one` (the last `confidential` by default), each with a gate-green reference manifest
 
-## M2 — The archetype grammar
-
-> Covers RFC §3 (axes + overlays).
-
-**Goal.** Generalize from one archetype to the ~8, with altitude/function overlays applied by a
-deterministic composition engine (base archetype + ordered overlays, never a cross-product).
-
-**Items.** the remaining archetype profiles; the overlay schema + altitude overlays
-(`c-level / vp / manager / ic`); the composition engine in `render.py`; `audience-fit` gate.
-
-**Exit gate.** the same reference meeting renders correctly at two altitudes; a second archetype
-(decision/steering) renders end-to-end.
-
-**Status.** ✅ both met — `qbr-c-level` renders at c-level (leads with decisions) vs manager
-(detail-first order) from one manifest; `esc-decision` renders end-to-end through the new
-`decision` archetype, the c-level overlay dropping `context_framing`. Overlay engine = drop →
-reorder → cap, deterministic.
-
-**Archetype library.** **Seven archetypes** now ship — `review` · `decision` · `post-mortem` ·
-`planning` · `retrospective` · `discovery` · `one_on_one` — each with a reference manifest
-(gate-green, covered by the test suite). The sensitive `one_on_one` defaults to `confidential`; the
-engineering function pack composes onto `planning`/`retrospective` (a reliability section).
-
-## M2b — Deliverable families
+## [x] M2b — Deliverable families
 
 > Covers RFC-0002 §3–§5 (IR families, the deliverable registry, params-in-bounds).
 
-**Goal.** Extend beyond slide-IR + doc-IR to the full catalogue: mind maps (`graph-IR`),
-infographics (`infographic-IR`), tables/charts (`data-IR`), interview quizzes (`quiz-IR`), each as
-a deterministic projection of the same grounded content.
+- [x] **Exit gate** — the QBR renders as a speaker-deck **and** infographic **and** KPI table from one ledger, no value diverging.
+- [x] Deliverable **registry** (`os/deliverables/`) — params as validated enums
+- [x] `infographic-IR` + `emit_svg` (deterministic, dependency-free SVG)
+- [x] `data-IR` + `emit_xlsx` (KPI table; assumed cells yellow-highlighted; zero formulas)
+- [x] `graph-IR` (mind map → `emit_svg`) + `quiz-IR` (graded w/ citation + discussion → `emit_md`)
+- [x] `deliverable-params` + `deliverable-params-in-bounds` gates
+- [x] **All six IR families** — slide · doc · graph · infographic · data · quiz — ARR proven identical across all of them
 
-**Items.** the deliverable registry `orchestrator/os/deliverables/*.yaml` (params as validated
-enums); the `emit_svg` / `emit_xlsx` emitters; the `deliverable-params-in-bounds` gate (bounds set
-by archetype × altitude); the facilitation deliverables (`facilitation_script`, `agenda`).
+## [x] M3 — Function packs
 
-**Exit gate.** the reference QBR renders as a speaker-deck **and** a professional infographic
-**and** a KPI table from one ledger, with no value diverging between them.
+> Covers RFC-0001 §3 (axis 3).
 
-**Status.** ✅ **exit gate met.** The deliverable **registry** (`os/deliverables/`, params as
-validated enums), the **infographic-IR** + `emit_svg` (deterministic, dependency-free SVG), the
-**data-IR** + `emit_xlsx` (KPI table, assumed cells yellow-highlighted, zero formulas), and the
-`deliverable-params` + `deliverable-params-in-bounds` gates ship. The QBR renders as a
-**speaker-deck, a professional infographic, and a KPI table from one ledger** — ARR proven
-**identical across all three** (no divergence, RFC-0002 §7).
+- [x] **Exit gate** — an RCA @ Manager × Engineering and a QBR @ C-level × Finance render, swapping only the function pack.
+- [x] `os/functions/` packs (axis 3); `apply_function` + `composed_structure` (archetype → function → altitude); `render.py --function`
+- [x] `finance` (adds `variance_attestation`/SOX) + `engineering` (adds `reliability_notes`/SLO) packs
+- [x] `post-mortem` archetype; `examples/qbr-finance.yaml` + `examples/rca-eng.yaml`
+- [ ] Remaining departments as packs (Sales · Marketing · CS · HR · Finance · Product · R&D · Ops)
 
-**Extras (complete).** `graph-IR` (mind map → `emit_svg`) and `quiz-IR` (graded with required
-citations / un-scored discussion → `emit_md`) ship too. **All six IR families now exist** —
-slide · doc · graph · infographic · data · quiz — every one a deterministic projection of the same
-ledger (ARR identical across deck, infographic, table, mind map, and quiz). The facilitation
-deliverables shipped in M6.
+## [x] M4 — Series manifest (the moat)
 
-## M3 — Function packs
+> Covers RFC-0001 §9.
 
-> Covers RFC §3 (axis 3).
+- [x] **Exit gate** — a two-instance series (Q2 → Q3) where Q3 opens knowing Q2's decisions, open actions, KPI movement.
+- [x] Series store (`os/series/`) + `tools/series.py close|open`
+- [x] Manifest `series_id` / `instance` / `carry_forward`
+- [x] Carry-forward: decision log, open actions, rolling risks, **KPI movement** (↑/↓) — never invents a number (history = sourced cells)
 
-**Goal.** Content packs per department (Eng / Product / Sales / Marketing / CS / HR / Finance /
-R&D / Ops), including the regulated sections some functions add (HR comp/PIP).
+## [x] M5 — Intake & integrations
 
-**Exit gate.** an RCA @ Manager × Engineering and a QBR @ C-level × Finance both render from the
-same archetypes with only the function pack swapped.
+> Covers RFC-0001 §2-G3, §15-M5; RFC-0002 §6.
 
-**Status.** ✅ **exit gate met.** Function packs (`orchestrator/functions/`, axis 3) compose as an
-overlay — archetype → **function** → altitude — inserting a department's regulated section.
-`qbr-finance` (review × c-level × **finance**) gains `variance_attestation` (SOX); `rca-eng`
-(the new **post-mortem** archetype × manager × **engineering**) gains `reliability_notes` (SLO).
-Proven swappable: the same review manifest with `--function finance` vs `--function engineering`
-differs **only** in that one section. `render.py --function` override; deterministic.
+- [x] **Exit gate** — a meeting prepared from an uploaded prior deck + a pasted KPI table, zero hand-entry of numbers.
+- [x] Source-reorganization primitive (`tools/intake.py`) — pasted KPI **CSV** + **prior instance** (series store) → paste-ready, deduped, tagged, all-`sourced` ledger
+- [x] **Foreign-deck extractor** `--deck <file.pptx>` + pluggable connector interface (`path → cells`; precedence series → deck → csv); proven by a round-trip
+- [x] **Sheets** = CSV export (documented; no native client needed)
+- [ ] Live **Jira / Notion** API connectors (need credentials; documented behind the same contract)
 
-## M4 — The series manifest (the moat)
+## [x] M6 — Live facilitation & post-meeting
 
-> Covers RFC §9. **Pulled forward** of its instinctive position because it is the moat and the
-> second-largest technical risk after grounding.
+> Covers RFC-0001 §4 (facilitate / follow-up), §8 (human-runs-the-room).
 
-**Goal.** A persistent, reference-based series manifest carrying open actions, the decision log, a
-rolling risk register, and KPI history across instances of a recurring meeting.
+- [x] **Exit gate** — a facilitated session produces minutes + a decision log + action items (owner+due), all carried into the series manifest.
+- [x] `facilitate.py prep` — timeboxed agenda + facilitation script (talking points grounded from the deck-IR)
+- [x] `facilitate.py followup` — minutes (decision log + owner/due actions) from human-captured outcomes → carried into the series store
+- [x] `human-runs-the-room` gate — enforced **by construction** (`followup` refuses without `--outcomes`; the agent never invents the room's outcomes)
 
-**Items.** the series-identity key (RFC §16 Q2); carry-forward of actions/decisions/risks/KPIs;
-the `series-updated` gate; the Q3 QBR opening pre-populated from the Q2 instance.
+## [x] M7 — Quality, localization, confidentiality hardening
 
-**Exit gate.** a two-instance series (Q2 → Q3) where Q3 opens knowing Q2's decisions, open
-actions, and KPI deltas.
+> Covers RFC-0001 §10 (rubric/gates), §7 (localization), §11 (enterprise lens).
 
-**Status.** ✅ **exit gate met.** The series store (`os/series/`), `series.py close|open`, and the
-manifest's `series_id` / `instance` / `carry_forward` ship. Closing **Q2** writes the store; opening
-**Q3** surfaces Q2's decisions, the still-open actions (with owners), and **KPI movement**
-(ARR 11.8M€ → 12.4M€ ↑, NRR 105% → 108% ↑). Store + digest deterministic; the store never invents a
-number (KPI history = the instance's sourced ledger cells). This is the capability EADOS does **not**
-demonstrate — the moat.
+- [x] **Exit gate** — confidentiality posture documented + gate-enforced; a non-English board deck passes the rubric in its `output_lang`.
+- [x] Confidentiality as **data** (`os/confidentiality/policy.yaml`) — regimes → mandatory gates + redact tags; classifications public→restricted
+- [x] `confidentiality` gate (SOX → `grounding-labeled` non-skippable; no sensitive cell in a `public` meeting) + `render.py --redact` egress (one ledger → every projection redacted; no PII leak)
+- [x] Rubric as **data** (`eval/rubric.yaml`) + `rubric` gate (structural, language-agnostic → the Italian board deck passes)
+- [x] Localization norms (`os/localization/regions.yaml`)
+- [x] **Test suite** (`tools/tests/`, 25 tests, run in CI) — determinism, no-divergence, grounding, overlays, gate-teeth, series/intake/facilitate, redaction
+- [ ] Per-region format application at render time (date/decimal)
+- [ ] Data-residency controls beyond redaction
 
-## M5 — Intake & integrations
+---
 
-> Covers RFC-0001 §2-G3, §15-M5; RFC-0002 §6 (the source-reorganization primitive).
+## Cross-cutting backlog
 
-**Goal.** Make providing material easy: the **source-reorganization** primitive (ingest an
-uploaded deck / pasted KPIs / notes → normalize into the typed ledger: dedupe, tag, group by
-topic/author, mark `sourced`), plus optional connectors (Jira / Notion / Sheets). Everything lands
-in the inputs ledger.
-
-**Exit gate.** a meeting prepared from an uploaded prior deck + a pasted KPI table, with zero
-hand-entry of numbers.
-
-**Status.** ✅ **exit gate met** (foundational primitive). `tools/intake.py` reorganizes a **pasted
-KPI table** (CSV) + the **prior instance** (the series store = the prior deck's data) into a
-paste-ready, deduped, tagged `inputs:` ledger — every cell `sourced`, **zero hand-entry**. Demo:
-the Q3 ledger comes from `q3-kpis.csv` (current wins on dedup) + the Q2 store (gap-fills
-`nrr_target`); deterministic, round-trips into a manifest.
-
-**Connectors.** Sources are now pluggable connectors (`path → cells`): `from_csv`, `from_series`,
-and the **foreign-deck extractor** `--deck <file.pptx>` (extracts metric `Label: value` lines;
-optional python-pptx). Precedence **series → deck → csv**. Proven by a **round-trip** (a generated
-deck → extracted back into the ledger). Remaining (need credentials, not bundled): the live
-**Jira / Notion** API connectors — documented behind the same contract; **Sheets** = CSV export.
-
-## M6 — Live facilitation & post-meeting
-
-> Covers RFC §4 (facilitate / follow-up), §8 (human-runs-the-room).
-
-**Goal.** Live agenda + timeboxing, minute-taking, action capture → minutes / decision log /
-follow-up, feeding the series manifest. The `human-runs-the-room` gate stays non-delegable.
-
-**Exit gate.** a facilitated session produces minutes + a decision log + action items with
-owner+due, all carried into the series manifest.
-
-**Status.** ✅ **exit gate met.** `tools/facilitate.py prep` produces a timeboxed agenda + a
-facilitation script (talking points grounded from the deck-IR, assumed values still labeled);
-`followup` consumes **human-captured outcomes** → minutes (decision log + action items with
-owner+due) and **carries them into the series store** (Q3 lands in the store with its decisions +
-owner/due actions). The `human-runs-the-room` gate is enforced **by construction** — `followup`
-refuses to run without `--outcomes`; the agent never invents the room's outcomes. This closes the
-lifecycle: intake → render → facilitate(prep) → [human runs] → followup → series store → next instance.
-
-## M7+ — Quality, localization, confidentiality hardening
-
-> Covers RFC §10 (rubric/gates), §7 (localization), §11 (enterprise lens).
-
-**Goal.** Per-archetype×altitude rubrics as data; localization norms per region; the
-confidentiality posture (what leaves the machine, data residency, redaction) hardened; regulatory
-context switching mandatory gates on.
-
-**Exit gate.** the confidentiality posture documented and gate-enforced; a non-English board deck
-passes the rubric in its `output_lang`.
-
-**Status.** ✅ **exit gate met.** Confidentiality is **data** (`os/confidentiality/policy.yaml`):
-regimes → mandatory gates + redact tags; classifications public→restricted. Enforced by the
-`confidentiality` gate (regimes known; **SOX → `grounding-labeled` non-skippable**; no sensitive
-cell in a `public` meeting) and `render.py --redact` (masks `pii`/`phi`/`sensitive` cells in the
-shared ledger → **every projection redacted identically**; the named counterparty never leaks). The
-**rubric is data** (`eval/rubric.yaml`) scored by the `rubric` gate — structural + language-agnostic,
-so the **Italian** board deck passes in its `output_lang`. `os/localization/regions.yaml` carries the
-per-region formality/format norms.
-
-**Hardening.** A dependency-free **test suite** (`tools/tests/`, 24 tests, run in CI on every PR)
-locks in the invariants: determinism, no-divergence across the IR families, grounding (labeled +
-appendix), overlays (altitude/function), the gates' teeth, series carry-forward, intake dedupe, and
-egress redaction. Remaining (later): per-region format application, data-residency connectors.
+- [ ] Function packs **archetype-aware** — a pack's `add_sections` should only land in relevant archetypes (today they apply to all; worked around in the references)
+- [ ] More rubric cells (every archetype × altitude); apply the per-region localization norms
+- [ ] More reference meetings (a non-QBR flagship); `tools/tests/` coverage as features land
 
 ---
 
@@ -214,4 +147,4 @@ egress redaction. Remaining (later): per-region format application, data-residen
 | M4 | RFC-0001 §9 |
 | M5 | RFC-0001 §2-G3 · RFC-0002 §6 |
 | M6 | RFC-0001 §4, §8 |
-| M7+ | RFC-0001 §7, §10, §11 |
+| M7 | RFC-0001 §7, §10, §11 |
