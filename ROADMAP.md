@@ -146,6 +146,14 @@ follow-up, feeding the series manifest. The `human-runs-the-room` gate stays non
 **Exit gate.** a facilitated session produces minutes + a decision log + action items with
 owner+due, all carried into the series manifest.
 
+**Status.** ✅ **exit gate met.** `tools/facilitate.py prep` produces a timeboxed agenda + a
+facilitation script (talking points grounded from the deck-IR, assumed values still labeled);
+`followup` consumes **human-captured outcomes** → minutes (decision log + action items with
+owner+due) and **carries them into the series store** (Q3 lands in the store with its decisions +
+owner/due actions). The `human-runs-the-room` gate is enforced **by construction** — `followup`
+refuses to run without `--outcomes`; the agent never invents the room's outcomes. This closes the
+lifecycle: intake → render → facilitate(prep) → [human runs] → followup → series store → next instance.
+
 ## M7+ — Quality, localization, confidentiality hardening
 
 > Covers RFC §10 (rubric/gates), §7 (localization), §11 (enterprise lens).
