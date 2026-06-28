@@ -19,6 +19,7 @@ import argparse
 import csv
 import json
 import os
+import re
 import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
@@ -55,7 +56,8 @@ def from_series(path):
     """The prior instance's KPIs (the series store, RFC-0001 §9) -> cells (the prior deck's data)."""
     if not os.path.exists(path):
         return {}
-    store = json.load(open(path, encoding="utf-8"))
+    with open(path, encoding="utf-8") as fh:
+        store = json.load(fh)
     series_id = store.get("series_id", "series")
     instances = store.get("instances", []) or []
     cells = {}
@@ -68,18 +70,52 @@ def from_series(path):
     return cells
 
 
-def reorganize(csv_paths, series_path):
-    """Merge sources into one normalized ledger. Current (CSV) wins; prior (series) fills gaps."""
-    ledger, prov = {}, {"overridden": 0, "gap_filled": 0}
-    prior = from_series(series_path) if series_path else {}
-    for key, cell in prior.items():
-        ledger[key] = cell
-    for path in csv_paths or []:
-        for key, cell in from_csv(path).items():
-            if key in ledger:
-                prov["overridden"] += 1
-            ledger[key] = cell                       # current source wins (dedupe)
-    prov["gap_filled"] = sum(1 for k, c in ledger.items() if c["via"] == "intake/series")
+def _slug(label):
+    return "kpi." + (re.sub(r"[^a-z0-9]+", "_", label.lower()).strip("_") or "x")
+
+
+def from_deck(path):
+    """An uploaded .pptx deck -> cells (the foreign-deck connector). Optional: needs python-pptx
+    (the cosmetic dep); the CSV/series sources stay dependency-free. Extracts 'Label: value' lines
+    whose value looks like a metric; marked/assumed values (⟨…⟩) are skipped, not re-imported."""
+    try:
+        from pptx import Presentation
+    except ImportError:
+        raise SystemExit("intake --deck needs python-pptx (pip install python-pptx); "
+                         "the --csv / --series sources are dependency-free.")
+    cells = {}
+    for slide in Presentation(path).slides:
+        for shape in slide.shapes:
+            if not shape.has_text_frame:
+                continue
+            for para in shape.text_frame.paragraphs:
+                line = "".join(r.text for r in para.runs).strip().lstrip("•-– ").strip()
+                m = re.match(r"^(.+?):\s+(.+)$", line)
+                if not m:
+                    continue
+                value = re.split(r"\s*\(", m.group(2))[0].strip()       # drop a trailing "(target: …)"
+                if not re.match(r"^[~<>]?\s*\d", value) or len(value) > 24:
+                    continue                                            # value must look metric-like
+                cells[_slug(m.group(1).strip())] = {
+                    "label": m.group(1).strip(), "value": value,
+                    "source": f"{os.path.basename(path)} (uploaded deck)", "via": "intake/deck"}
+    return cells
+
+
+def reorganize(csv_paths, series_path, deck_paths=None):
+    """Merge sources into one normalized ledger. Precedence (later wins): series → deck → csv — the
+    prior instance fills gaps, an uploaded deck refines, the pasted table is authoritative."""
+    ledger, prov = {}, {"overridden": 0}
+    sources = (("series", from_series, [series_path] if series_path else []),
+               ("deck", from_deck, deck_paths or []),
+               ("csv", from_csv, csv_paths or []))
+    for _name, fn, paths in sources:
+        for p in paths:
+            for key, cell in fn(p).items():
+                if key in ledger:
+                    prov["overridden"] += 1
+                ledger[key] = cell                   # later source wins (dedupe)
+    prov["gap_filled"] = sum(1 for c in ledger.values() if c["via"] == "intake/series")
     return ledger, prov
 
 
@@ -102,12 +138,13 @@ def main():
     ap = argparse.ArgumentParser(description="Reorganize provided material into a typed inputs ledger.")
     ap.add_argument("--csv", action="append", help="a pasted/exported KPI table (repeatable)")
     ap.add_argument("--series", help="a series store JSON (the prior instance's data)")
+    ap.add_argument("--deck", action="append", help="an uploaded .pptx deck (needs python-pptx)")
     ap.add_argument("--out", help="output path for the YAML inputs fragment (default: stdout)")
     args = ap.parse_args()
-    if not args.csv and not args.series:
-        ap.error("provide at least one source: --csv and/or --series")
+    if not (args.csv or args.series or args.deck):
+        ap.error("provide at least one source: --csv, --series, and/or --deck")
 
-    ledger, prov = reorganize(args.csv, args.series)
+    ledger, prov = reorganize(args.csv, args.series, args.deck)
     text = emit_yaml(ledger)
     if args.out:
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
