@@ -55,6 +55,28 @@ Most enterprise meetings recur. The **persistent series manifest** carries forwa
 decision log, a rolling risk register, and KPI history — so the Q3 QBR opens already knowing what Q2
 decided and how the KPIs moved. A prompt wrapper cannot do this.
 
+## Install (consumer)
+
+Drop the EAMOS machine into a repo from a published release — **download + placement only**, not the
+agent init:
+
+```sh
+# macOS / Linux
+curl -fsSL https://github.com/danielPoloWork/pgs-eamos/releases/latest/download/setup.sh | sh
+```
+```powershell
+# Windows (PowerShell)
+irm https://github.com/danielPoloWork/pgs-eamos/releases/latest/download/setup.ps1 | iex
+```
+
+Or download `setup.sh` / `setup.ps1` and run with flags (`--help` — new-vs-existing repo, path, ref).
+The installer **verifies the bundle's SHA256** (fail-closed) and extracts it **additively** (never
+overwrites). Double-click `setup.command` (macOS) or `setup.bat` (Windows).
+
+> Needs a published GitHub release. The repo is **private until GTM** — until then, build a bundle
+> locally (`git archive --format=tar.gz -o bundle.tar.gz HEAD`) and install with
+> `sh setup/setup.sh --from bundle.tar.gz`.
+
 ## Status
 
 Early. The design of record is [RFC-0001](.eamos-core/docs/rfc/0001-eamos-meeting-os.md) and
