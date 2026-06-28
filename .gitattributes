@@ -6,7 +6,8 @@
 #   * repo-management plumbing — CI / release / issue templates (.github/), .gitignore, this file,
 #     and the guided installer (setup/, which *downloads* the bundle, so it ships as standalone
 #     release assets, not inside the archive);
-#   * dev-only docs — CONTRIBUTING.md (governance for work ON EAMOS) and ROADMAP.md (the dev plan).
+#   * dev-only docs — CONTRIBUTING.md (governance for work ON EAMOS), ROADMAP.md (the dev plan),
+#     and SECURITY.md (how to report a vuln in the EAMOS project).
 #
 # What SHIPS in the bundle:
 #   * .eamos-core/** — the machine (agent, orchestrator, tools, eval, docs incl. the RFCs/ADRs);
@@ -24,6 +25,7 @@
 /.idea                  export-ignore
 /CONTRIBUTING.md        export-ignore
 /ROADMAP.md             export-ignore
+/SECURITY.md            export-ignore
 # The guided installer downloads the bundle, so it is not part of it: published as standalone
 # release assets (setup.{sh,command,ps1,bat} + SHA256SUMS), not shipped inside the archive.
 /setup                  export-ignore

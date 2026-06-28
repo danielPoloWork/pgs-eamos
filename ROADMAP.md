@@ -24,7 +24,8 @@ projections), **not** RAG-synthesis over arbitrary sources.
 - [x] **M5** — Intake & integrations (primitive + connectors)
 - [x] **M6** — Live facilitation & post-meeting
 - [x] **M7** — Quality, localization, confidentiality hardening
-- [x] **Hardening** — dependency-free test suite (25 tests) in CI
+- [x] **M8** — Guided installer + release bundle
+- [x] **Hardening** — dependency-free test suite (25 tests) in CI · `SECURITY.md` policy
 
 **Backlog (open, out of the core):**
 
@@ -126,6 +127,17 @@ projections), **not** RAG-synthesis over arbitrary sources.
 - [ ] Per-region format application at render time (date/decimal)
 - [ ] Data-residency controls beyond redaction
 
+## [x] M8 — Guided installer + release bundle
+
+> Mirrors EADOS's M9. The `SECURITY.md` policy ships alongside (RFC-0001 §11, enterprise lens).
+
+- [x] **Exit gate** — `setup.{sh,ps1,command,bat}` install the bundle from a release; SHA256-verified (fail-closed), additive (no-clobber); the installed copy runs + the no-clobber refusal holds.
+- [x] `setup/` — POSIX + macOS (`.command`) + PowerShell + cmd shim; interactive when bare, scriptable via flags
+- [x] `.github/workflows/release.yml` — `git archive` bundle (export-ignore via `.gitattributes`) + `SHA256SUMS` + installers attached to a published release
+- [x] `.gitattributes` — ships `.eamos-core/**` + AGENTS/CLAUDE/README + LICENSE; strips dev plumbing (setup/, .github, CONTRIBUTING, ROADMAP, SECURITY)
+- [x] `SECURITY.md` — vulnerability-reporting policy (tooling · installer · supply chain · the data/confidentiality surface)
+- [ ] Cut the first GitHub release **and** make the repo public to activate the `curl|sh` install — pending GTM
+
 ---
 
 ## Cross-cutting backlog
@@ -148,3 +160,4 @@ projections), **not** RAG-synthesis over arbitrary sources.
 | M5 | RFC-0001 §2-G3 · RFC-0002 §6 |
 | M6 | RFC-0001 §4, §8 |
 | M7 | RFC-0001 §7, §10, §11 |
+| M8 | installer (no RFC — mirrors EADOS M9); `SECURITY.md` → RFC-0001 §11 |
