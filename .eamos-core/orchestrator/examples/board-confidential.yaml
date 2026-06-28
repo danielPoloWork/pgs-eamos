@@ -1,0 +1,70 @@
+# board-confidential.yaml — review @ c-level with a regulated, classified payload (RFC-0001 §11).
+# Demonstrates the confidentiality gate (SOX → grounding mandatory; no PII in a public meeting) and
+# egress redaction (render --redact masks the pii cell across every projection).
+schema_version: 1
+
+identity:
+  series_id: board-confidential-review
+  instance: "Q3-2026"
+  series_name: "Q3-2026 Confidential Board Review"
+  archetype: review
+  audience_altitude: c-level
+  function: whole-company
+
+classification: confidential        # public | internal | confidential | restricted (RFC-0001 §11)
+
+context:
+  company_size: enterprise
+  industry: fintech
+  regulatory: [SOX, GDPR]           # SOX → grounding mandatory; GDPR → pii redacted on egress
+  framework: SAFe
+  formality: high
+  output_lang: it
+
+objective: "Approvare il piano e rivedere il churn dell'account nominativo."
+
+deliverables:
+  - { type: presentation, format: speaker, length: medium }
+
+inputs:
+  kpi.arr:
+    label: "ARR"
+    value: "12.4M€"
+    provided: true
+    source: "dashboard-CS"
+    provenance: sourced
+  kpi.arr_target:
+    label: "ARR target"
+    value: "13.0M€"
+    provided: true
+    source: "plan H2"
+    provenance: sourced
+  kpi.churn_named_account:
+    label: "Churn account nominativo"
+    value: "−1.2M€ (cliente: Rossi & Figli SpA)"
+    provided: true
+    source: "CRM / account review"
+    provenance: sourced
+    pii: true                       # names a counterparty → redacted on egress under GDPR
+
+content:
+  exec_summary:
+    title: "Sintesi esecutiva"
+    lead: "ARR {{kpi.arr}} vs target {{kpi.arr_target}}; un churn nominativo rilevante (vedi commento)."
+    points:
+      - "Decisione richiesta sul piano H2."
+  kpi_vs_target:
+    title: "KPI vs target"
+    rows:
+      - { metric_binding: kpi.arr, target_binding: kpi.arr_target }
+  variance_commentary:
+    title: "Commento agli scostamenti"
+    body: "Lo scostamento include il churn dell'account nominativo {{kpi.churn_named_account}}."
+  risks_and_asks:
+    title: "Rischi e richieste"
+    risks:
+      - { risk: "Concentrazione su account nominativi", ask: "Approvare il piano di diversificazione" }
+  decisions_required:
+    title: "Decisioni richieste"
+    decisions:
+      - "Approvare il piano H2 (ARR target {{kpi.arr_target}})."

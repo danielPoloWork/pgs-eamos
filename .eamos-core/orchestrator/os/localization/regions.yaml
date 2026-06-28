@@ -1,0 +1,11 @@
+# Localization norms per region (RFC-0001 §7) — advisory defaults for formality / formats.
+# The deck-IR is language-agnostic (section ids English; prose in output_lang), so these tune
+# presentation, not structure. The `rubric` gate is language-agnostic by design — a non-English
+# board deck passes in its own output_lang (M7 exit gate).
+version: 1
+regions:
+  it:      { formality_default: high,   date_format: "DD/MM/YYYY", decimal: "," }
+  en-US:   { formality_default: medium, date_format: "MM/DD/YYYY", decimal: "." }
+  en-GB:   { formality_default: medium, date_format: "DD/MM/YYYY", decimal: "." }
+  ja:      { formality_default: high,   date_format: "YYYY/MM/DD", decimal: "." }
+  zh-Hans: { formality_default: high,   date_format: "YYYY-MM-DD", decimal: "." }

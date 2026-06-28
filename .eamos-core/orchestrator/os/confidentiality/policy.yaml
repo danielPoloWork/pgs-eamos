@@ -1,0 +1,21 @@
+# Confidentiality policy (RFC-0001 §11) — the enterprise lens, as data.
+# Maps a regulatory regime (from a manifest's context.regulatory) to the gates it makes mandatory
+# and the cell tags it redacts on egress. Enforced by eamos_lint (confidentiality gate) + render --redact.
+version: 1
+
+classifications: [public, internal, confidential, restricted]
+default: confidential          # a meeting with no explicit classification is treated as confidential
+
+regimes:
+  SOX:
+    mandatory_gates: [grounding-labeled]    # no unsourced numbers in a SOX-governed meeting
+    note: "Financial figures sourced + auditable; assumptions labeled."
+  GDPR:
+    redact_tags: [pii]
+    note: "Personal data minimized; PII redacted on egress."
+  HIPAA:
+    redact_tags: [pii, phi]
+    note: "PHI + PII redacted on egress."
+
+# Egress rule (enforced): a cell carrying an active regime's redact_tag (or `sensitive: true`) must
+# NOT appear in a `public`-classified meeting, and is masked by `render.py --redact`.

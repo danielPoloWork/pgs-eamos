@@ -172,6 +172,16 @@ context switching mandatory gates on.
 **Exit gate.** the confidentiality posture documented and gate-enforced; a non-English board deck
 passes the rubric in its `output_lang`.
 
+**Status.** ✅ **exit gate met.** Confidentiality is **data** (`os/confidentiality/policy.yaml`):
+regimes → mandatory gates + redact tags; classifications public→restricted. Enforced by the
+`confidentiality` gate (regimes known; **SOX → `grounding-labeled` non-skippable**; no sensitive
+cell in a `public` meeting) and `render.py --redact` (masks `pii`/`phi`/`sensitive` cells in the
+shared ledger → **every projection redacted identically**; the named counterparty never leaks). The
+**rubric is data** (`eval/rubric.yaml`) scored by the `rubric` gate — structural + language-agnostic,
+so the **Italian** board deck passes in its `output_lang`. `os/localization/regions.yaml` carries the
+per-region formality/format norms. Remaining (later): per-region format application, data-residency
+connectors, the M2b extras (graph-IR / quiz-IR).
+
 ---
 
 ## Traceability (milestone → RFC)

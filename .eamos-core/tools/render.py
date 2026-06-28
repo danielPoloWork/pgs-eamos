@@ -25,6 +25,7 @@ CORE = os.path.dirname(TOOLS)
 ARCHETYPES = os.path.join(CORE, "orchestrator", "archetypes")
 DELIVERABLES = os.path.join(CORE, "orchestrator", "os", "deliverables")
 FUNCTIONS = os.path.join(CORE, "orchestrator", "functions")
+POLICY = os.path.join(CORE, "orchestrator", "os", "confidentiality", "policy.yaml")
 
 BIND_RE = re.compile(r"\{\{\s*([a-z][a-z0-9_.]*)\s*\}\}")
 # The "verify before the room" label for an assumed value, by output language (RFC-0001 §6).
@@ -140,6 +141,38 @@ def load_deliverable(dtype):
         return None
     with open(path, encoding="utf-8") as fh:
         return yamlmini.load_yaml(fh.read())
+
+
+def load_policy():
+    """The confidentiality policy (RFC-0001 §11), or {} if absent."""
+    if not os.path.exists(POLICY):
+        return {}
+    with open(POLICY, encoding="utf-8") as fh:
+        return yamlmini.load_yaml(fh.read())
+
+
+def redact_tags_for(manifest, policy):
+    """The cell tags to redact for this meeting: every active regime's redact_tags + `sensitive`."""
+    regimes = (manifest.get("context", {}) or {}).get("regulatory", []) or []
+    tags = {"sensitive"}
+    for r in regimes:
+        tags.update((policy.get("regimes", {}).get(r, {}) or {}).get("redact_tags", []) or [])
+    return tags
+
+
+def apply_redaction(manifest, policy):
+    """Egress redaction (RFC-0001 §11): mask every cell carrying an active redact tag, in place, in
+    the shared ledger — so EVERY projection is redacted identically (one ledger, RFC-0002 §7)."""
+    tags = redact_tags_for(manifest, policy)
+    lang = (manifest.get("context", {}) or {}).get("output_lang", "en")
+    mask = "⟦redatto⟧" if lang == "it" else "⟦redacted⟧"
+    n = 0
+    for cell in (manifest.get("inputs", {}) or {}).values():
+        if isinstance(cell, dict) and any(cell.get(t) for t in tags):
+            cell["value"] = mask
+            cell["redacted"] = True
+            n += 1
+    return n
 
 
 def load_function(name):
@@ -360,12 +393,15 @@ def main():
     ap.add_argument("--out", help="output path for the IR JSON (default: stdout)")
     ap.add_argument("--altitude", help="override the manifest's audience_altitude (e.g. manager)")
     ap.add_argument("--function", help="override the manifest's function pack (e.g. engineering)")
+    ap.add_argument("--redact", action="store_true", help="egress redaction of pii/phi/sensitive cells")
     ap.add_argument("--ir", choices=["deck", "infographic", "data"], default="deck",
                     help="which IR projection to emit (default: deck)")
     args = ap.parse_args()
 
     with open(args.manifest, encoding="utf-8") as fh:
         manifest = yamlmini.load_yaml(fh.read())
+    if args.redact:
+        apply_redaction(manifest, load_policy())
     archetype = load_archetype(manifest.get("identity", {}).get("archetype", "review"))
     if args.ir == "infographic":
         ir, acc = build_infographic_ir(manifest, archetype, altitude=args.altitude, function=args.function)
