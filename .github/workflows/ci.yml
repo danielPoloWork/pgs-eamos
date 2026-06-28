@@ -1,0 +1,34 @@
+name: ci
+
+# The quality bar EAMOS imposes on its output, imposed first on itself (AGENTS.md §8).
+# Dependency-free: stdlib Python only, so the gates run anywhere with no install step.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile every tool
+        run: python -m py_compile .eamos-core/tools/*.py
+
+      - name: Quality gates (eamos_lint on the reference manifest)
+        run: python .eamos-core/tools/eamos_lint.py .eamos-core/orchestrator/examples/qbr-c-level.yaml
+
+      - name: Deterministic render-smoke (two renders must be byte-identical)
+        run: |
+          python .eamos-core/tools/render.py .eamos-core/orchestrator/examples/qbr-c-level.yaml --out build/a.json
+          python .eamos-core/tools/render.py .eamos-core/orchestrator/examples/qbr-c-level.yaml --out build/b.json
+          cmp build/a.json build/b.json
+          python .eamos-core/tools/emit_md.py build/a.json --out build/deck.md
+          echo "render-smoke: deterministic ✓"
