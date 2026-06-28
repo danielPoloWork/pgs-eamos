@@ -1,0 +1,5 @@
+# Optional dependencies for the COSMETIC emit hops only (RFC-0001 §14).
+# The deterministic core (yamlmini, render, emit_md, eamos_lint) is dependency-free and needs
+# none of these. Install only to emit binary deliverables:
+#     pip install -r .eamos-core/tools/requirements-emit.txt
+python-pptx>=1.0    # emit_pptx.py — the .pptx board deck
