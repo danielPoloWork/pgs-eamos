@@ -5,4 +5,5 @@ latest English source, and **stale** when the source changed afterward.
 
 | Target | File | Source | Synced | Status |
 |--------|------|--------|--------|--------|
-| Italiano (`it`) | [it/README.md](it/README.md) | [`README.md`](../../../README.md) | 2026-06-28 | current |
+| 简体中文 (`zh-Hans`) | [zh-Hans/README.md](zh-Hans/README.md) | [`README.md`](../../../README.md) | 2026-06-28 | current |
+| 日本語 (`ja`) | [ja/README.md](ja/README.md) | [`README.md`](../../../README.md) | 2026-06-28 | current |
