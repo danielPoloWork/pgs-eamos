@@ -1,0 +1,30 @@
+# Archetype profile: review/status (RFC-0001 §3, axis 1).
+# The deep structure of a review meeting, as data — independent of audience, function, language.
+# Mirror this file's shape and rigor when authoring a new archetype (RFC-0001 §3).
+archetype: review
+display_name: Review / Status
+
+# The deep structure: an ordered list of sections. `kind` selects how render.py builds the
+# section's blocks; `required` sections cannot be dropped by altitude shaping (completeness gate).
+structure:
+  - { id: exec_summary,        kind: summary,        required: true }
+  - { id: kpi_vs_target,       kind: kpi_table,      required: true }
+  - { id: variance_commentary, kind: prose,          required: true }
+  - { id: risks_and_asks,      kind: risk_list,      required: true }
+  - { id: decisions_required,  kind: decision_list,  required: true }
+
+# Altitude shaping (RFC-0001 §3, axis 2): same structure, different depth/length/emphasis.
+# max_slides caps the rendered deck (audience-fit gate); lead_with reorders the exec summary;
+# jargon is advisory for M1.
+altitude_shaping:
+  c-level: { max_slides: 12, jargon: none, lead_with: recommendation }
+  vp:      { max_slides: 18, jargon: some, lead_with: recommendation }
+  manager: { max_slides: 25, jargon: full, lead_with: detail }
+  ic:      { max_slides: 30, jargon: full, lead_with: detail }
+
+# Deliverable-parameter bounds by altitude (RFC-0002 §5): the enterprise guardrail.
+deliverable_bounds:
+  c-level:
+    presentation: { length: { allow: [short, medium] } }
+
+gates: [completeness, grounding-labeled, audience-fit]

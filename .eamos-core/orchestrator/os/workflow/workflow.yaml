@@ -1,0 +1,36 @@
+# The EAMOS meeting lifecycle (RFC-0001 §4). Schema: _schema.md.
+version: 1
+states: [intake, structure, draft, review, facilitate, follow_up]
+initial: intake
+
+phases:
+  intake:
+    produces: "the meeting manifest (axes resolved) + the typed inputs ledger"
+    owner: meeting-architect
+    gate: { id: manifest-confirmed, human: true }      # the last cheap checkpoint (RFC §5)
+    next: structure
+  structure:
+    produces: "the deck-IR skeleton for each deliverable (sections per archetype × overlays)"
+    owner: meeting-architect
+    gate: { id: structure-complete, human: false }
+    next: draft
+  draft:
+    produces: "the deck-IR filled — sourced bindings + labeled assumptions"
+    owner: exec-briefer
+    gate: { id: grounding-labeled, human: false }
+    next: review
+  review:
+    produces: "a quality pass against the per-archetype × altitude rubric"
+    owner: meeting-owner
+    gate: { id: review-passed, human: false }
+    next: facilitate
+  facilitate:
+    produces: "the live agenda, timeboxing, and minute/decision/action capture"
+    owner: facilitator
+    gate: { id: human-runs-the-room, human: true }     # non-delegable (RFC §8)
+    next: follow_up
+  follow_up:
+    produces: "minutes, decision log, action items -> the persistent series manifest"
+    owner: minute-taker
+    gate: { id: series-updated, human: false }
+    next: null

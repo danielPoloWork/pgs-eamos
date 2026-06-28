@@ -1,0 +1,90 @@
+# qbr-c-level.yaml — the EAMOS reference meeting (the analogue of EADOS's reference.yaml).
+# QBR @ C-level (RFC-0001 §12-F3). Rendering it must produce a deterministic deck-IR whose
+# eamos_lint.py gates pass out of the box. The render-smoke fixture for EAMOS's own CI.
+schema_version: 1
+
+identity:
+  series_name: "Q3-2026 Business Review — Platform BU"
+  archetype: review                 # axis 1
+  audience_altitude: c-level        # axis 2
+  function: whole-company           # axis 3
+
+context:                            # axis 4
+  company_size: enterprise
+  industry: fintech
+  regulatory: [SOX, GDPR]
+  framework: SAFe
+  formality: high
+  output_lang: it                   # rendered prose is Italian; section ids stay English
+
+objective: "Approvare il re-forecast H2 e i 3 rischi major del trimestre."
+
+# The deliverable bundle requested (RFC-0002 §4). M1 renders the presentation.
+deliverables:
+  - { type: presentation, format: speaker, length: medium }
+
+# The typed inputs ledger (RFC-0001 §6). Every quantitative claim is a cell here; prose binds
+# cells with {{key}}. `sourced` renders plainly; `assumed` renders labeled + into the appendix.
+inputs:
+  kpi.arr:
+    label: "ARR"
+    value: "12.4M€"
+    provided: true
+    source: "dashboard-CS / Q3 export"
+    provenance: sourced
+  kpi.arr_target:
+    label: "ARR target H2"
+    value: "13.0M€"
+    provided: true
+    source: "plan H2 (board-approved)"
+    provenance: sourced
+  kpi.nrr:
+    label: "Net revenue retention"
+    value: "108%"
+    provided: true
+    source: "dashboard-CS / Q3 export"
+    provenance: sourced
+  kpi.nrr_target:
+    label: "NRR target"
+    value: "112%"
+    provided: true
+    source: "plan H2"
+    provenance: sourced
+  kpi.churn_q3:
+    label: "Churn logo Q3"
+    value: "~4.2%"
+    provided: false                 # material missing → filled professionally, labeled
+    provenance: assumed
+    assumption: "stimato dal trend H1; placeholder — adattare e verificare prima della sala"
+    fill_from: "dashboard-CS / churn report Q3"
+    review_required: true
+
+# Content authored once, per section (keys match archetype `structure` ids). Prose is in
+# output_lang and binds the ledger via {{key}}; structured kinds (kpi_table) carry bindings.
+content:
+  exec_summary:
+    title: "Sintesi esecutiva"
+    lead: "Raccomandazione: approvare il re-forecast H2. ARR a {{kpi.arr}} contro target {{kpi.arr_target}}; churn in osservazione a {{kpi.churn_q3}}."
+    points:
+      - "Crescita solida: NRR {{kpi.nrr}}, sotto il target {{kpi.nrr_target}} di 4 punti."
+      - "Tre rischi major richiedono una decisione del board (sezione rischi)."
+  kpi_vs_target:
+    title: "KPI vs target"
+    rows:
+      - { metric_binding: kpi.arr,  target_binding: kpi.arr_target }
+      - { metric_binding: kpi.nrr,  target_binding: kpi.nrr_target }
+      - { metric_binding: kpi.churn_q3 }
+  variance_commentary:
+    title: "Commento agli scostamenti"
+    body: "NRR a {{kpi.nrr}} vs {{kpi.nrr_target}}: lo scostamento è guidato da due downgrade enterprise. Churn {{kpi.churn_q3}} è una stima da confermare."
+  risks_and_asks:
+    title: "Rischi e richieste"
+    risks:
+      - { risk: "Concentrazione ricavi su 2 account enterprise", ask: "Approvare budget retention dedicato" }
+      - { risk: "Ritardo compliance SOX su pipeline reporting", ask: "Sponsorship esecutiva entro luglio" }
+      - { risk: "Capacity engineering sotto piano SAFe", ask: "Sblocco 3 assunzioni" }
+  decisions_required:
+    title: "Decisioni richieste"
+    decisions:
+      - "Approvare il re-forecast H2 (ARR target {{kpi.arr_target}})."
+      - "Approvare il budget retention dedicato."
