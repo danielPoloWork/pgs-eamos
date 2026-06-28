@@ -43,7 +43,7 @@ jobs:
           listing="$(tar tzf pgs-eamos-bundle.tar.gz)"
           echo "$listing" | grep -q '^\.eamos-core/tools/render.py$' || { echo "bundle missing the factory"; exit 1; }
           echo "$listing" | grep -q '^AGENTS\.md$' || { echo "bundle missing the agent contract"; exit 1; }
-          echo "$listing" | grep -Eq '^(CONTRIBUTING|ROADMAP)\.md$' && { echo "bundle leaked a stripped file"; exit 1; } || true
+          echo "$listing" | grep -Eq '^(CONTRIBUTING|ROADMAP|SECURITY)\.md$' && { echo "bundle leaked a stripped file"; exit 1; } || true
       - name: Stage the installers and compute SHA256SUMS
         run: |
           set -e
