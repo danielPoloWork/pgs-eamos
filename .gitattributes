@@ -1,0 +1,36 @@
+# Distribution-bundle control (consumed by `git archive`).
+#
+# `git archive` produces a consumer bundle of the EAMOS machine — what you *operate* to prepare
+# meetings, not this repository's own dev plumbing. The paths below are stripped via `export-ignore`:
+#
+#   * repo-management plumbing — CI / release / issue templates (.github/), .gitignore, this file,
+#     and the guided installer (setup/, which *downloads* the bundle, so it ships as standalone
+#     release assets, not inside the archive);
+#   * dev-only docs — CONTRIBUTING.md (governance for work ON EAMOS) and ROADMAP.md (the dev plan).
+#
+# What SHIPS in the bundle:
+#   * .eamos-core/** — the machine (agent, orchestrator, tools, eval, docs incl. the RFCs/ADRs);
+#   * the agent contract — AGENTS.md / CLAUDE.md (auto-loaded from root) + README.md (entry point);
+#   * LICENSE.
+#
+# Produce a bundle:  git archive --format=tar.gz -o pgs-eamos-bundle.tar.gz HEAD
+#
+# NOTE: patterns are anchored with a leading slash so they match only the intended path — the
+# per-directory README.md files under .eamos-core/ are NOT stripped.
+
+/.github                export-ignore
+/.gitignore             export-ignore
+/.gitattributes         export-ignore
+/.idea                  export-ignore
+/CONTRIBUTING.md        export-ignore
+/ROADMAP.md             export-ignore
+# The guided installer downloads the bundle, so it is not part of it: published as standalone
+# release assets (setup.{sh,command,ps1,bat} + SHA256SUMS), not shipped inside the archive.
+/setup                  export-ignore
+
+# Installer line endings, pinned regardless of the committer's platform: LF for the POSIX shebang
+# scripts and for setup.ps1 (pwsh reads LF fine on every OS); CRLF for the cmd .bat shim.
+setup/*.sh              text eol=lf
+setup/*.command         text eol=lf
+setup/*.ps1             text eol=lf
+setup/*.bat             text eol=crlf
