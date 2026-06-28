@@ -2,6 +2,17 @@
 
 *The briefing & facilitation factory.*
 
+[![CI](https://github.com/danielPoloWork/pgs-eamos/actions/workflows/ci.yml/badge.svg)](https://github.com/danielPoloWork/pgs-eamos/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196.svg)](https://www.conventionalcommits.org/)
+[![status: pre-1.0](https://img.shields.io/badge/status-pre--1.0-orange.svg)](ROADMAP.md)
+[![grounding: labeled, never fabricated](https://img.shields.io/badge/grounding-labeled%2C%20never%20fabricated-success.svg)](.eamos-core/docs/rfc/0001-eamos-meeting-os.md)
+
+> **🌐 Lingue · Languages:** [Italiano](.eamos-core/docs/i18n/it/README.md) — derived from this
+> English source (the source of truth). Policy & freshness:
+> [`.eamos-core/docs/i18n/`](.eamos-core/docs/i18n/README.md).
+
 EAMOS turns a maintainer's inputs into the **material and the regie** for an enterprise meeting —
 pre-read, deck, facilitation script, minutes, decision and action log — for any company size,
 department, audience altitude, and output language.
@@ -46,11 +57,28 @@ decided and how the KPIs moved. A prompt wrapper cannot do this.
 
 ## Status
 
-Greenfield. The design of record is [RFC-0001](.eamos-core/docs/rfc/0001-eamos-meeting-os.md); the
-plan is [ROADMAP.md](ROADMAP.md). The first milestone (M1) ships **one** reference meeting —
-**QBR @ C-level** — end-to-end, then the grammar generalizes.
+Early. The design of record is [RFC-0001](.eamos-core/docs/rfc/0001-eamos-meeting-os.md) and
+[RFC-0002](.eamos-core/docs/rfc/0002-deliverable-catalogue-and-ir-families.md); the plan is
+[ROADMAP.md](ROADMAP.md). **M1** (the QBR @ C-level reference) renders end-to-end and
+deterministically — manifest → deck-IR → Markdown deck + `.pptx` board deck, gates green;
+**M2** (the composable archetype grammar) is in progress.
 
 ## Repository
 
 The full agent contract is [AGENTS.md](AGENTS.md). All factory machinery lives under
-`.eamos-core/` — a consumer ignores it with a single line.
+`.eamos-core/` — a consumer ignores it with a single line. How to contribute (and the exhaustive-PR
+bar): [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Credits
+
+- **Owner & maintainer:** Daniel Polo ([@danielPoloWork](https://github.com/danielPoloWork)).
+- **Architecture:** the second instance of the **EADOS** pattern — schema-first data, mechanical
+  gates, a persistent manifest, and a human-held terminal gate.
+- **Built with** [Anthropic Claude](https://www.anthropic.com/claude) / Claude Code. The cosmetic
+  `.pptx` hop uses [python-pptx](https://python-pptx.readthedocs.io/) — optional, outside the
+  dependency-free core.
+
+## License & ownership
+
+MIT — see [LICENSE](LICENSE). © 2026 Daniel Polo. EAMOS is **owner-governed**: anyone may *propose*
+changes, only the owner lands them on `main`.
