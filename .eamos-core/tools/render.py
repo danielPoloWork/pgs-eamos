@@ -387,6 +387,90 @@ def build_data_ir(manifest, archetype, altitude=None, function=None):
     }, acc
 
 
+def _flatten_block(b):
+    t = b.get("type")
+    if t in ("lead", "bullet", "prose", "decision"):
+        return b.get("text", "")
+    if t == "kpi_row":
+        return f"{b.get('label', '')}: {b.get('value', '')}"
+    if t == "risk":
+        return f"{b.get('risk', '')} → {b.get('ask', '')}"
+    if t == "option":
+        return b.get("name", "")
+    return ""
+
+
+def build_graph_ir(manifest, archetype, altitude=None, function=None):
+    """Project the content into a graph-IR (mind map, RFC-0002 §3): root = objective, branches =
+    sections, leaves = key points. A peer over the SAME ledger; assumed values stay labeled."""
+    acc = _new_acc()
+    ident = manifest.get("identity", {}) or {}
+    ctx = manifest.get("context", {}) or {}
+    ledger = manifest.get("inputs", {}) or {}
+    content = manifest.get("content", {}) or {}
+    lang = ctx.get("output_lang", "en")
+    altitude = altitude or ident.get("audience_altitude", "")
+    function = function or ident.get("function", "")
+    shaping = (archetype.get("altitude_shaping", {}) or {}).get(altitude, {}) or {}
+    effective = composed_structure(archetype, function, shaping)
+
+    branches = []
+    for sec in effective:
+        slide = _build_section(sec, content, ledger, acc, lang)
+        leaves = [t for t in (_flatten_block(b) for b in slide["blocks"]) if t][:3]
+        branches.append({"label": slide["title"], "leaves": leaves})
+    review_appendix = [
+        {"binding": k, "value": "" if ledger[k].get("value") is None else str(ledger[k].get("value")),
+         "assumption": ledger[k].get("assumption", ""), "fill_from": ledger[k].get("fill_from", "")}
+        for k in sorted(acc["assumed"])
+    ]
+    return {"deliverable": "mindmap", "output_lang": lang, "root": manifest.get("objective", ""),
+            "branches": branches, "review_appendix": review_appendix}, acc
+
+
+_QUIZ_STEM = {"it": "Qual è il valore di", "en": "What is the value of"}
+_QUIZ_DISC = {"it": "Qual è la posizione su", "en": "What is the stance on"}
+
+
+def build_quiz_ir(manifest, archetype, altitude=None, function=None):
+    """Project an interview quiz (quiz-IR, RFC-0002 §3, §11-3): graded questions cite a ledger
+    source (required); discussion questions (from decisions) are un-scored. SAME ledger."""
+    acc = _new_acc()
+    ident = manifest.get("identity", {}) or {}
+    ctx = manifest.get("context", {}) or {}
+    ledger = manifest.get("inputs", {}) or {}
+    content = manifest.get("content", {}) or {}
+    lang = ctx.get("output_lang", "en")
+    stem, disc = _QUIZ_STEM.get(lang, _QUIZ_STEM["en"]), _QUIZ_DISC.get(lang, _QUIZ_DISC["en"])
+
+    questions = []
+    for key, cell in ledger.items():
+        if not (key.startswith("kpi.") and isinstance(cell, dict)):
+            continue
+        assumed = cell.get("provenance") == "assumed"
+        if assumed:
+            acc["assumed"][key] = cell
+        questions.append({"kind": "graded", "q": f"{stem} «{cell.get('label', key)}»?",
+                          "a": "" if cell.get("value") is None else str(cell.get("value")),
+                          "cite": cell.get("source") or cell.get("fill_from") or "", "assumed": assumed})
+    altitude = altitude or ident.get("audience_altitude", "")
+    function = function or ident.get("function", "")
+    shaping = (archetype.get("altitude_shaping", {}) or {}).get(altitude, {}) or {}
+    for sec in composed_structure(archetype, function, shaping):
+        if sec.get("kind") == "decision_list":
+            c = content.get(sec["id"], {}) if isinstance(content, dict) else {}
+            for d in (c.get("decisions", []) or []):
+                questions.append({"kind": "discussion", "q": f"{disc}: {resolve_text(d, ledger, acc, lang)}",
+                                  "a": None, "cite": None, "assumed": False})
+    review_appendix = [
+        {"binding": k, "value": "" if ledger[k].get("value") is None else str(ledger[k].get("value")),
+         "assumption": ledger[k].get("assumption", ""), "fill_from": ledger[k].get("fill_from", "")}
+        for k in sorted(acc["assumed"])
+    ]
+    return {"deliverable": "interview_quiz", "output_lang": lang, "title": manifest.get("objective", ""),
+            "questions": questions, "review_appendix": review_appendix}, acc
+
+
 def main():
     ap = argparse.ArgumentParser(description="Render an EAMOS meeting manifest into an IR.")
     ap.add_argument("manifest", help="path to a meeting manifest (e.g. examples/qbr-c-level.yaml)")
@@ -394,7 +478,7 @@ def main():
     ap.add_argument("--altitude", help="override the manifest's audience_altitude (e.g. manager)")
     ap.add_argument("--function", help="override the manifest's function pack (e.g. engineering)")
     ap.add_argument("--redact", action="store_true", help="egress redaction of pii/phi/sensitive cells")
-    ap.add_argument("--ir", choices=["deck", "infographic", "data"], default="deck",
+    ap.add_argument("--ir", choices=["deck", "infographic", "data", "mindmap", "quiz"], default="deck",
                     help="which IR projection to emit (default: deck)")
     args = ap.parse_args()
 
@@ -409,6 +493,12 @@ def main():
     elif args.ir == "data":
         ir, acc = build_data_ir(manifest, archetype, altitude=args.altitude, function=args.function)
         kind_note = f"{len(ir['rows'])} rows"
+    elif args.ir == "mindmap":
+        ir, acc = build_graph_ir(manifest, archetype, altitude=args.altitude, function=args.function)
+        kind_note = f"{len(ir['branches'])} branches"
+    elif args.ir == "quiz":
+        ir, acc = build_quiz_ir(manifest, archetype, altitude=args.altitude, function=args.function)
+        kind_note = f"{len(ir['questions'])} questions"
     else:
         ir, acc = build_deck_ir(manifest, archetype, altitude=args.altitude, function=args.function)
         kind_note = f"{len(ir['slides'])} slides"

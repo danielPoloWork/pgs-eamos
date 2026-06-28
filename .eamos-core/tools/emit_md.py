@@ -81,20 +81,50 @@ def render_md(ir):
     return "\n".join(out).rstrip() + "\n"
 
 
+_QUIZ_L = {
+    "it": {"title": "Quiz d'intervista", "graded": "Valutate (citazione richiesta)",
+           "disc": "Discussione (non valutate)", "ans": "Risposta", "src": "fonte", "verify": "da verificare"},
+    "en": {"title": "Interview quiz", "graded": "Graded (citation required)",
+           "disc": "Discussion (un-scored)", "ans": "Answer", "src": "source", "verify": "to verify"},
+}
+
+
+def render_quiz_md(ir):
+    lang = ir.get("output_lang", "en")
+    t = _QUIZ_L.get(lang, _QUIZ_L["en"])
+    out = [f"# {t['title']} — {ir.get('title', '')}", ""]
+    graded = [q for q in ir.get("questions", []) if q.get("kind") == "graded"]
+    disc = [q for q in ir.get("questions", []) if q.get("kind") == "discussion"]
+    if graded:
+        out.append(f"## {t['graded']}")
+        for i, q in enumerate(graded, 1):
+            out.append(f"{i}. {q.get('q', '')}")
+            tag = f" ⟨{t['verify']}⟩" if q.get("assumed") else ""
+            out.append(f"   - {t['ans']}: {q.get('a', '')}{tag}  [{t['src']}: {q.get('cite', '')}]")
+        out.append("")
+    if disc:
+        out.append(f"## {t['disc']}")
+        for i, q in enumerate(disc, 1):
+            out.append(f"{i}. {q.get('q', '')}")
+        out.append("")
+    return "\n".join(out).rstrip() + "\n"
+
+
 def main():
-    ap = argparse.ArgumentParser(description="Emit a Markdown deck from a deck-IR.")
-    ap.add_argument("deck_ir", help="path to a deck-IR JSON file")
+    ap = argparse.ArgumentParser(description="Emit Markdown from a deck-IR or quiz-IR.")
+    ap.add_argument("deck_ir", help="path to a deck-IR or quiz-IR JSON file")
     ap.add_argument("--out", help="output path (default: stdout)")
     args = ap.parse_args()
 
     with open(args.deck_ir, encoding="utf-8") as fh:
         ir = json.load(fh)
-    text = render_md(ir)
+    text = render_quiz_md(ir) if ir.get("deliverable") == "interview_quiz" else render_md(ir)
     if args.out:
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
         with open(args.out, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
-        print(f"emit_md: OK — deck -> {args.out}")
+        kind = "quiz" if ir.get("deliverable") == "interview_quiz" else "deck"
+        print(f"emit_md: OK — {kind} -> {args.out}")
     else:
         sys.stdout.write(text)
     return 0

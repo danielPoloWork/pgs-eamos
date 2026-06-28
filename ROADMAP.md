@@ -83,8 +83,13 @@ validated enums), the **infographic-IR** + `emit_svg` (deterministic, dependency
 **data-IR** + `emit_xlsx` (KPI table, assumed cells yellow-highlighted, zero formulas), and the
 `deliverable-params` + `deliverable-params-in-bounds` gates ship. The QBR renders as a
 **speaker-deck, a professional infographic, and a KPI table from one ledger** — ARR proven
-**identical across all three** (no divergence, RFC-0002 §7). Remaining M2b extras (beyond the exit
-gate): `graph-IR` (mind map), `quiz-IR` (graded/discussion), the facilitation deliverables.
+**identical across all three** (no divergence, RFC-0002 §7).
+
+**Extras (complete).** `graph-IR` (mind map → `emit_svg`) and `quiz-IR` (graded with required
+citations / un-scored discussion → `emit_md`) ship too. **All six IR families now exist** —
+slide · doc · graph · infographic · data · quiz — every one a deterministic projection of the same
+ledger (ARR identical across deck, infographic, table, mind map, and quiz). The facilitation
+deliverables shipped in M6.
 
 ## M3 — Function packs
 

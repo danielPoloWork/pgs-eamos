@@ -123,20 +123,71 @@ def build_svg(ir):
     return "\n".join(parts) + "\n"
 
 
+def _trunc(s, n):
+    s = str(s)
+    return s if len(s) <= n else s[:n - 1] + "…"
+
+
+def build_mindmap_svg(ir):
+    """A deterministic horizontal mind map from a graph-IR: root → branches → leaves."""
+    bg, accent, body, amber, muted, card = THEMES["professional"]
+    branches = ir.get("branches", [])
+    row_h = 46
+    rows = sum(max(1, len(b.get("leaves", []))) for b in branches) or 1
+    W, H = 1180, max(280, rows * row_h + 70)
+    rx, bx, lx = 30, 380, 700
+    parts = [f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">',
+             f'<rect width="{W}" height="{H}" fill="{bg}"/>']
+    root_y = H // 2
+
+    def box(x, y, w, text, fill, txt, size=14, bold=False):
+        parts.append(f'<rect x="{x}" y="{y - 17}" width="{w}" height="34" rx="8" fill="{fill}"/>')
+        parts.append(f'<text x="{x + 12}" y="{y + 5}" font-family="Calibri, Arial, sans-serif" '
+                     f'font-size="{size}" font-weight="{"bold" if bold else "normal"}" '
+                     f'fill="{txt}">{esc(text)}</text>')
+
+    def link(x1, y1, x2, y2):
+        mx = (x1 + x2) // 2
+        parts.append(f'<path d="M{x1} {y1} C{mx} {y1} {mx} {y2} {x2} {y2}" stroke="{muted}" '
+                     f'fill="none" stroke-width="1.5"/>')
+
+    box(rx, root_y, 320, _trunc(ir.get("root", ""), 46), accent, "#FFFFFF", 15, True)
+    y = 40
+    for b in branches:
+        leaves = b.get("leaves", []) or []
+        span = max(1, len(leaves)) * row_h
+        by = y + span // 2
+        link(rx + 320, root_y, bx, by)
+        box(bx, by, 300, _trunc(b.get("label", ""), 40), card, accent, 14, True)
+        ly = y + row_h // 2
+        for leaf in leaves:
+            link(bx + 300, by, lx, ly)
+            col = amber if "⟨" in str(leaf) else body
+            parts.append(f'<text x="{lx}" y="{ly + 5}" font-family="Calibri, Arial, sans-serif" '
+                         f'font-size="13" fill="{col}">{esc(_trunc(leaf, 52))}</text>')
+            ly += row_h
+        y += span
+    parts.append("</svg>")
+    return "\n".join(parts) + "\n"
+
+
 def main():
-    ap = argparse.ArgumentParser(description="Emit an SVG infographic from an infographic-IR.")
-    ap.add_argument("info_ir", help="path to an infographic-IR JSON file")
+    ap = argparse.ArgumentParser(description="Emit an SVG from an infographic-IR or graph-IR.")
+    ap.add_argument("ir_json", help="path to an infographic-IR or graph-IR (mindmap) JSON file")
     ap.add_argument("--out", help="output .svg path (default: stdout)")
     args = ap.parse_args()
 
-    with open(args.info_ir, encoding="utf-8") as fh:
+    with open(args.ir_json, encoding="utf-8") as fh:
         ir = json.load(fh)
-    svg = build_svg(ir)
+    is_map = ir.get("deliverable") == "mindmap"
+    svg = build_mindmap_svg(ir) if is_map else build_svg(ir)
     if args.out:
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
         with open(args.out, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(svg)
-        print(f"emit_svg: OK — infographic ({len(ir.get('stats', []))} stats) -> {args.out}")
+        n = len(ir.get("branches", [])) if is_map else len(ir.get("stats", []))
+        print(f"emit_svg: OK — {'mindmap' if is_map else 'infographic'} ({n} "
+              f"{'branches' if is_map else 'stats'}) -> {args.out}")
     else:
         sys.stdout.write(svg)
     return 0

@@ -1,0 +1,9 @@
+# Deliverable: interview_quiz (quiz-IR -> MD/DOCX). Schema: _schema.md. RFC-0002 §3, §11-3.
+type: interview_quiz
+ir_family: quiz-IR
+params:
+  # Resolved decision (RFC-0002 §11-3): two question kinds — graded (citation into the ledger
+  # required) and discussion (citation optional, rendered un-scored).
+  count:  { enum: [short, standard, long], default: standard }
+  intent: { kind: free_text }
+emitter: emit_md
