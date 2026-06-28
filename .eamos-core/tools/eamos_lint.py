@@ -23,6 +23,8 @@ sys.path.insert(0, TOOLS)
 import render  # noqa: E402  (reuses the loader + build_deck_ir)
 import yamlmini  # noqa: E402
 
+RUBRIC = os.path.join(os.path.dirname(TOOLS), "eval", "rubric.yaml")
+
 failures = []  # (gate, message)
 
 
@@ -97,6 +99,50 @@ def gate_registry_params(manifest):
                 fail("deliverable-params", f"{dtype}.{k}='{v}' not in {enum}")
 
 
+def gate_confidentiality(manifest):
+    """The enterprise lens (RFC-0001 §11): regimes are known, their mandatory gates are green, and
+    no redact-tagged cell sits in a `public`-classified meeting."""
+    policy = render.load_policy()
+    if not policy:
+        return
+    failed_ids = {g for g, _ in failures}
+    regimes = (manifest.get("context", {}) or {}).get("regulatory", []) or []
+    classification = manifest.get("classification") or policy.get("default")
+    for r in regimes:
+        spec = (policy.get("regimes", {}) or {}).get(r)
+        if spec is None:
+            fail("confidentiality", f"unknown regulatory regime '{r}' (not in the policy)")
+            continue
+        for g in spec.get("mandatory_gates", []) or []:
+            if g in failed_ids:
+                fail("confidentiality", f"{r} makes gate '{g}' mandatory, but it failed")
+    if classification == "public":
+        tags = render.redact_tags_for(manifest, policy)
+        for key, cell in (manifest.get("inputs", {}) or {}).items():
+            if isinstance(cell, dict) and any(cell.get(t) for t in tags):
+                fail("confidentiality", f"sensitive cell '{key}' in a 'public'-classified meeting")
+
+
+def gate_rubric(manifest, deck_ir):
+    """Score the deck-IR against the data rubric (RFC-0001 §10). Structural + language-agnostic, so
+    a non-English board deck passes in its own output_lang (M7)."""
+    rubric = yamlmini.load_yaml(open(RUBRIC, encoding="utf-8").read()) if os.path.exists(RUBRIC) else {}
+    ident = manifest.get("identity", {}) or {}
+    arch, alt = ident.get("archetype", ""), ident.get("audience_altitude", "")
+    crit = (rubric.get(arch, {}) or {}).get(alt)
+    if not crit:
+        return                                   # no rubric cell yet — skip (the matrix grows over time)
+    present = {s["id"] for s in deck_ir.get("slides", [])}
+    for sid in crit.get("require_sections", []) or []:
+        if sid not in present:
+            fail("rubric", f"{arch}@{alt}: rubric requires section '{sid}'")
+    cap = crit.get("max_slides")
+    if isinstance(cap, int) and len(deck_ir.get("slides", [])) > cap:
+        fail("rubric", f"{arch}@{alt}: {len(deck_ir['slides'])} slides exceed the rubric's {cap}")
+    if crit.get("grounding") and "grounding-labeled" in {g for g, _ in failures}:
+        fail("rubric", f"{arch}@{alt}: rubric requires grounding-labeled green")
+
+
 def main():
     if len(sys.argv) < 2:
         print("usage: eamos_lint.py <manifest.yaml>")
@@ -112,6 +158,8 @@ def main():
     gate_audience_fit(deck_ir, archetype)
     gate_params_in_bounds(manifest, archetype)
     gate_registry_params(manifest)
+    gate_rubric(manifest, deck_ir)
+    gate_confidentiality(manifest)   # last: it inspects the other gates' results
 
     if failures:
         print("eamos_lint: FAIL\n")

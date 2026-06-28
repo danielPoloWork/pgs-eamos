@@ -1,0 +1,21 @@
+# Rubric as data (RFC-0001 §10) — "what good looks like" per archetype × altitude. The `rubric`
+# gate (eamos_lint) scores the deck-IR against this. Structural + language-agnostic: a non-English
+# board deck passes in its own output_lang (the M7 localization exit gate). Seeds review @ c-level;
+# add a block per cell as the matrix grows (the prose rubric eval/rubric.md stays the narrative).
+review:
+  c-level:
+    require_sections: [exec_summary, decisions_required]   # lead with the summary + an explicit ask
+    grounding: true                                        # grounding-labeled must be green
+    max_slides: 12
+
+decision:
+  c-level:
+    require_sections: [recommendation, decision_ask]       # lead with the recommendation + the ask
+    grounding: true
+    max_slides: 10
+
+post-mortem:
+  manager:
+    require_sections: [incident_summary, corrective_actions]
+    grounding: true
+    max_slides: 20
