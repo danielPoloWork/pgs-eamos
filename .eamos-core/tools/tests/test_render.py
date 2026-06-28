@@ -14,7 +14,8 @@ sys.path.insert(0, TOOLS)
 import yamlmini  # noqa: E402
 import render    # noqa: E402
 
-REFS = ["qbr-c-level", "esc-decision", "qbr-finance", "rca-eng", "board-confidential"]
+REFS = ["qbr-c-level", "esc-decision", "qbr-finance", "rca-eng", "board-confidential",
+        "planning-release", "retro-sprint", "discovery-product", "one-on-one"]
 
 
 def load(name):

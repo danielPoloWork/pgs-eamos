@@ -1,0 +1,69 @@
+# planning-release.yaml — planning @ manager × engineering.
+schema_version: 1
+
+identity:
+  series_id: platform-release-planning
+  instance: "R-2026.3"
+  series_name: "Release 2026.3 Planning — Platform"
+  archetype: planning
+  audience_altitude: manager
+  function: engineering
+
+context:
+  company_size: enterprise
+  industry: fintech
+  framework: SAFe
+  formality: medium
+  output_lang: it
+
+objective: "Confermare scope e capacità per la release 2026.3."
+
+deliverables:
+  - { type: presentation, format: detailed, length: medium }
+
+inputs:
+  kpi.velocity:
+    label: "Velocity media (3 sprint)"
+    value: "62 pt/sprint"
+    provided: true
+    source: "Jira / velocity report"
+    provenance: sourced
+  kpi.capacity_points:
+    label: "Capacità release"
+    value: "240 pt"
+    provided: true
+    source: "Piano capacity (3 sprint, ferie incluse)"
+    provenance: sourced
+  kpi.committed_points:
+    label: "Scope proposto"
+    value: "265 pt"
+    provided: false
+    provenance: assumed
+    assumption: "stima da backlog non rifinito; placeholder — rifinire con il team"
+    fill_from: "backlog grooming"
+    review_required: true
+
+content:
+  objectives:
+    title: "Obiettivi"
+    lead: "Capacità {{kpi.capacity_points}} (velocity {{kpi.velocity}}); scope proposto {{kpi.committed_points}}."
+    points:
+      - "Lo scope proposto eccede la capacità: serve un taglio o un de-risk."
+  capacity:
+    title: "Capacità vs scope"
+    rows:
+      - { metric_binding: kpi.committed_points, target_binding: kpi.capacity_points }
+  scope_commitments:
+    title: "Impegni di scope"
+    decisions:
+      - "Committare i 240 pt entro capacità; portare i 25 pt eccedenti a stretch."
+  dependencies:
+    title: "Dipendenze"
+    risks:
+      - { risk: "Dipendenza dal team Payments per le API", ask: "Allineare la data di consegna API entro sprint 1" }
+  timeline:
+    title: "Timeline"
+    body: "Sprint 1: fondamenta · Sprint 2: feature core · Sprint 3: hardening + release."
+  reliability_notes:                  # added by the engineering function pack (axis 3)
+    title: "Note di affidabilità (SLO)"
+    body: "La release tocca il path pagamenti: aggiungere canary e un gate su error budget prima del rollout."

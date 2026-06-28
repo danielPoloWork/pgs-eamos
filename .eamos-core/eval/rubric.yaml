@@ -19,3 +19,27 @@ post-mortem:
     require_sections: [incident_summary, corrective_actions]
     grounding: true
     max_slides: 20
+
+planning:
+  manager:
+    require_sections: [objectives, scope_commitments]
+    grounding: true
+    max_slides: 20
+
+retrospective:
+  manager:
+    require_sections: [went_well, to_improve, experiments]
+    grounding: true
+    max_slides: 12
+
+discovery:
+  manager:
+    require_sections: [problem_statement, hypotheses]
+    grounding: true
+    max_slides: 15
+
+one_on_one:
+  manager:
+    require_sections: [check_in, development]
+    grounding: true
+    max_slides: 6

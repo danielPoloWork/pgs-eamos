@@ -1,0 +1,15 @@
+# Archetype profile: 1:1 / development (RFC-0001 §3, axis 1).
+# SENSITIVE (RFC-0001 §11): performance/development data. Reference manifests default to a
+# `confidential` classification; comp/PIP, if present, are tagged `sensitive` in the ledger.
+archetype: one_on_one
+display_name: 1:1 / Development
+
+structure:
+  - { id: check_in,    kind: summary,       required: true }
+  - { id: progress,    kind: prose,         required: true }
+  - { id: development, kind: decision_list, required: true }
+
+altitude_shaping:
+  manager: { max_slides: 6, jargon: full, lead_with: detail }
+
+gates: [completeness, grounding-labeled, audience-fit]

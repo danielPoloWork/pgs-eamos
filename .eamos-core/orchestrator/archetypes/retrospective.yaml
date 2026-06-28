@@ -1,0 +1,14 @@
+# Archetype profile: retrospective (RFC-0001 §3, axis 1). Sprint / project retro.
+archetype: retrospective
+display_name: Retrospective
+
+structure:
+  - { id: went_well,   kind: prose,         required: true }
+  - { id: to_improve,  kind: prose,         required: true }
+  - { id: experiments, kind: decision_list, required: true }
+
+altitude_shaping:
+  manager: { max_slides: 12, jargon: full, lead_with: detail }
+  ic:      { max_slides: 15, jargon: full, lead_with: detail }
+
+gates: [completeness, grounding-labeled, audience-fit]
