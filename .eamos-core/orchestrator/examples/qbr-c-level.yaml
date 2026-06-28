@@ -34,6 +34,8 @@ deliverables:
   - { type: presentation, format: speaker, length: medium }
   - { type: infographic, orientation: portrait, visual_style: professional, detail: standard }
   - { type: table_chart, chart: none }   # mixed-unit KPIs (€ and %) -> table only, no single chart
+  - { type: mindmap, orientation: horizontal }
+  - { type: interview_quiz, count: standard }
 
 # The typed inputs ledger (RFC-0001 §6). Every quantitative claim is a cell here; prose binds
 # cells with {{key}}. `sourced` renders plainly; `assumed` renders labeled + into the appendix.
