@@ -58,6 +58,31 @@ def resolve_text(text, ledger, acc, lang):
     return BIND_RE.sub(lambda m: resolve_value(m.group(1), ledger, acc, lang), text)
 
 
+def apply_overlays(structure, shaping):
+    """Compose the effective section list: base structure + the altitude overlay (RFC-0001 §3).
+
+    Deterministic; never a cross-product. Order of operations: drop -> reorder -> slide-budget cap.
+    A `required` section is never dropped (the completeness gate depends on this). `order` is a
+    stable reordering — listed ids lead, in that order; unlisted sections keep their relative order.
+    """
+    secs = [s for s in structure if s.get("required") or s["id"] not in set(shaping.get("drop", []) or [])]
+    order = shaping.get("order")
+    if order:
+        rank = {sid: i for i, sid in enumerate(order)}
+        secs.sort(key=lambda s: rank.get(s["id"], len(order)))   # stable: unlisted keep order
+    cap = shaping.get("max_slides")
+    if isinstance(cap, int) and len(secs) > cap:
+        kept, opt_budget = [], cap - sum(1 for s in secs if s.get("required"))
+        for s in secs:
+            if s.get("required"):
+                kept.append(s)
+            elif opt_budget > 0:
+                kept.append(s)
+                opt_budget -= 1
+        secs = kept
+    return secs
+
+
 def _build_section(sec, content, ledger, acc, lang):
     """Turn one archetype section + its manifest content into a deck-IR slide."""
     kind = sec.get("kind")
@@ -91,6 +116,12 @@ def _build_section(sec, content, ledger, acc, lang):
     elif kind == "decision_list":
         for d in c.get("decisions", []) or []:
             blocks.append({"type": "decision", "text": resolve_text(d, ledger, acc, lang)})
+    elif kind == "option_list":
+        for o in c.get("options", []) or []:
+            blocks.append({"type": "option",
+                           "name": resolve_text(o.get("name", ""), ledger, acc, lang),
+                           "pro": resolve_text(o.get("pro", ""), ledger, acc, lang),
+                           "con": resolve_text(o.get("con", ""), ledger, acc, lang)})
     return slide
 
 
@@ -100,35 +131,28 @@ def load_archetype(name):
         return yamlmini.load_yaml(fh.read())
 
 
-def build_deck_ir(manifest, archetype):
-    """Compose the deck-IR and return (deck_ir, acc). Pure and deterministic."""
+def build_deck_ir(manifest, archetype, altitude=None):
+    """Compose the deck-IR and return (deck_ir, acc). Pure and deterministic.
+
+    `altitude` overrides the manifest's audience_altitude — lets one manifest render at several
+    altitudes (the M2 exit gate: the same meeting renders correctly at two altitudes)."""
     acc = _new_acc()
     ident = manifest.get("identity", {}) or {}
     ctx = manifest.get("context", {}) or {}
     ledger = manifest.get("inputs", {}) or {}
     content = manifest.get("content", {}) or {}
     lang = ctx.get("output_lang", "en")
-    altitude = ident.get("audience_altitude", "")
+    altitude = altitude or ident.get("audience_altitude", "")
     shaping = (archetype.get("altitude_shaping", {}) or {}).get(altitude, {}) or {}
 
     deliverables = manifest.get("deliverables", []) or [{"type": "presentation"}]
     deliverable = deliverables[0] if isinstance(deliverables, list) and deliverables else {}
 
-    # Compose every section; required sections are never dropped. Altitude max_slides caps the
-    # deck by dropping optional sections from the end (audience-fit gate then verifies the count).
+    # Compose the effective structure via the altitude overlay (drop/reorder/cap), then render
+    # each section. The overlay is deterministic and never a cross-product (RFC-0001 §3).
     structure = archetype.get("structure", []) or []
-    slides = [_build_section(sec, content, ledger, acc, lang) for sec in structure]
-    max_slides = shaping.get("max_slides")
-    if isinstance(max_slides, int) and len(slides) > max_slides:
-        required_ids = {s["id"] for s in structure if s.get("required")}
-        kept, optional_budget = [], max_slides - len(required_ids)
-        for slide, sec in zip(slides, structure):
-            if sec.get("required"):
-                kept.append(slide)
-            elif optional_budget > 0:
-                kept.append(slide)
-                optional_budget -= 1
-        slides = kept
+    effective = apply_overlays(structure, shaping)
+    slides = [_build_section(sec, content, ledger, acc, lang) for sec in effective]
 
     review_appendix = [
         {"binding": k,
@@ -157,12 +181,13 @@ def main():
     ap = argparse.ArgumentParser(description="Render an EAMOS meeting manifest into a deck-IR.")
     ap.add_argument("manifest", help="path to a meeting manifest (e.g. examples/qbr-c-level.yaml)")
     ap.add_argument("--out", help="output path for the deck-IR JSON (default: stdout)")
+    ap.add_argument("--altitude", help="override the manifest's audience_altitude (e.g. manager)")
     args = ap.parse_args()
 
     with open(args.manifest, encoding="utf-8") as fh:
         manifest = yamlmini.load_yaml(fh.read())
     archetype = load_archetype(manifest.get("identity", {}).get("archetype", "review"))
-    deck_ir, acc = build_deck_ir(manifest, archetype)
+    deck_ir, acc = build_deck_ir(manifest, archetype, altitude=args.altitude)
 
     text = json.dumps(deck_ir, indent=2, ensure_ascii=False) + "\n"
     if args.out:

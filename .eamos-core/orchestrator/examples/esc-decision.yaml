@@ -1,0 +1,75 @@
+# esc-decision.yaml — a second reference meeting (M2): decision/steering @ C-level.
+# Executive Steering Committee deciding the H2 platform investment (build vs buy vs partner).
+# Renders end-to-end through the decision archetype; the c-level overlay drops context_framing.
+schema_version: 1
+
+identity:
+  series_name: "ESC — H2-2026 Platform Investment Decision"
+  archetype: decision
+  audience_altitude: c-level
+  function: engineering
+
+context:
+  company_size: enterprise
+  industry: fintech
+  regulatory: [SOX]
+  framework: SAFe
+  formality: high
+  output_lang: it
+
+objective: "Approvare l'opzione di investimento piattaforma H2 e sbloccare il budget."
+
+deliverables:
+  - { type: presentation, format: speaker, length: short }
+
+inputs:
+  cost.build:
+    label: "Costo build in-house"
+    value: "1.8M€ una tantum"
+    provided: true
+    source: "Finance — stima engineering H2"
+    provenance: sourced
+  cost.buy:
+    label: "Costo buy (vendor X)"
+    value: "1.2M€/anno"
+    provided: true
+    source: "offerta vendor X (valida 30gg)"
+    provenance: sourced
+  time.build:
+    label: "Time-to-value build"
+    value: "9 mesi"
+    provided: true
+    source: "piano di capacity SAFe"
+    provenance: sourced
+  roi.buy:
+    label: "ROI atteso buy"
+    value: "~22% a 18 mesi"
+    provided: false
+    provenance: assumed
+    assumption: "stima da business case preliminare; placeholder — validare con Finance"
+    fill_from: "Finance — business case H2"
+    review_required: true
+
+content:
+  context_framing:
+    title: "Contesto"
+    body: "La piattaforma attuale non regge i volumi H2. Tre strade: build in-house ({{cost.build}}, {{time.build}}), buy ({{cost.buy}}), o partnership."
+  options:
+    title: "Opzioni e trade-off"
+    options:
+      - { name: "Build in-house", pro: "Controllo pieno, IP interna", con: "{{cost.build}}, time-to-value {{time.build}}" }
+      - { name: "Buy (vendor X)", pro: "Operativo subito, {{cost.buy}}", con: "Lock-in vendor, ROI {{roi.buy}}" }
+      - { name: "Partnership", pro: "Rischio condiviso", con: "Governance complessa, marginalità incerta" }
+  recommendation:
+    title: "Raccomandazione"
+    body: "Raccomandazione: buy da vendor X. Time-to-value immediato a {{cost.buy}}; il build a {{cost.build}} non rientra nella finestra H2."
+  risks_and_mitigations:
+    title: "Rischi e mitigazioni"
+    risks:
+      - { risk: "Lock-in sul vendor X", ask: "Clausola di exit + escrow del codice nel contratto" }
+      - { risk: "Compliance SOX sull'integrazione dati", ask: "Audit di sicurezza pre-go-live" }
+  decision_ask:
+    title: "Decisione richiesta"
+    decisions:
+      - "Approvare l'opzione buy (vendor X) a {{cost.buy}}."
+      - "Sbloccare il budget H2 e mandato a negoziare la clausola di exit."

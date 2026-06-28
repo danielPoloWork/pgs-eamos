@@ -15,9 +15,11 @@ import sys
 # Template chrome in the deck's output language (the section labels, not the content).
 LABELS = {
     "it": {"target": "target", "risk": "Rischio", "ask": "Richiesta", "decision": "Decisione",
-           "review": "Da verificare prima della sala", "objective": "Obiettivo", "fill": "fonte"},
+           "review": "Da verificare prima della sala", "objective": "Obiettivo", "fill": "fonte",
+           "pro": "pro", "con": "contro"},
     "en": {"target": "target", "risk": "Risk", "ask": "Ask", "decision": "Decision",
-           "review": "Verify before the room", "objective": "Objective", "fill": "source"},
+           "review": "Verify before the room", "objective": "Objective", "fill": "source",
+           "pro": "pro", "con": "con"},
 }
 
 
@@ -58,6 +60,9 @@ def render_md(ir):
                            f"**{_lab(lang, 'ask')}:** {b.get('ask', '')}")
             elif t == "decision":
                 out.append(f"- {b.get('text', '')}")
+            elif t == "option":
+                out.append(f"- **{b.get('name', '')}** — {_lab(lang, 'pro')}: {b.get('pro', '')}; "
+                           f"{_lab(lang, 'con')}: {b.get('con', '')}")
         out.append("")
 
     appendix = ir.get("review_appendix", [])

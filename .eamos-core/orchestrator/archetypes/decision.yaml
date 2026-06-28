@@ -1,0 +1,33 @@
+# Archetype profile: decision/steering (RFC-0001 §3, axis 1).
+# A meeting that asks for an approval: options + trade-offs + a recommendation + the decision ask.
+# Steering committees, ESC, architecture review boards, risk boards. Mirror review.yaml's rigor.
+archetype: decision
+display_name: Decision / Steering
+
+structure:
+  - { id: context_framing,        kind: prose,         required: false }  # board drops it (overlay)
+  - { id: options,                kind: option_list,   required: true }
+  - { id: recommendation,         kind: prose,         required: true }
+  - { id: risks_and_mitigations,  kind: risk_list,     required: true }
+  - { id: decision_ask,           kind: decision_list, required: true }
+
+# c-level: lead with the recommendation, drop the context framing (the board already has it).
+# vp: keep the context, recommendation still leads.
+altitude_shaping:
+  c-level:
+    max_slides: 10
+    jargon: none
+    lead_with: recommendation
+    drop: [context_framing]
+    order: [recommendation, options, risks_and_mitigations, decision_ask]
+  vp:
+    max_slides: 16
+    jargon: some
+    lead_with: recommendation
+    order: [recommendation, context_framing, options, risks_and_mitigations, decision_ask]
+
+deliverable_bounds:
+  c-level:
+    presentation: { length: { allow: [short, medium] } }
+
+gates: [completeness, grounding-labeled, audience-fit]

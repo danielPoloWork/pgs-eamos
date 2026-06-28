@@ -13,11 +13,16 @@ structure:
   - { id: risks_and_asks,      kind: risk_list,      required: true }
   - { id: decisions_required,  kind: decision_list,  required: true }
 
-# Altitude shaping (RFC-0001 §3, axis 2): same structure, different depth/length/emphasis.
-# max_slides caps the rendered deck (audience-fit gate); lead_with reorders the exec summary;
-# jargon is advisory for M1.
+# Altitude shaping = the per-altitude overlay (RFC-0001 §3, axis 2): same base structure, composed
+# differently. Keys: max_slides (caps the deck, audience-fit gate), lead_with/jargon (advisory),
+# `drop` (remove sections — never a required one), `order` (stable reorder; listed ids lead).
+# c-level leads with the decision/ask; manager keeps the base, detail-first order.
 altitude_shaping:
-  c-level: { max_slides: 12, jargon: none, lead_with: recommendation }
+  c-level:
+    max_slides: 12
+    jargon: none
+    lead_with: recommendation
+    order: [exec_summary, decisions_required, kpi_vs_target, variance_commentary, risks_and_asks]
   vp:      { max_slides: 18, jargon: some, lead_with: recommendation }
   manager: { max_slides: 25, jargon: full, lead_with: detail }
   ic:      { max_slides: 30, jargon: full, lead_with: detail }
