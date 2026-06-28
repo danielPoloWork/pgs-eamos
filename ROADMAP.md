@@ -40,9 +40,10 @@ EAMOS resolves the QBR @ C-level archetype → writes the meeting manifest (with
 **Exit gate.** `grounding-labeled` + `completeness` green on `qbr-c-level.yaml`; the rendered
 bundle opens and contains the review appendix; the run scores against the rubric.
 
-**Status.** ✅ deterministic core + gates shipped in the baseline; `emit_pptx.py` now renders the
-real board deck (7 slides: title + 5 sections + the review appendix), with assumed values flagged
-in amber. Remaining M1 polish: `emit_docx` pre-read.
+**Status.** ✅ **complete.** Deterministic core + gates in the baseline; the **full deliverable
+bundle** ships from one deck-IR — `emit_md` (deck / agenda), `emit_pptx` (board deck),
+`emit_docx` (read-alone pre-read with a KPI table) — all in `output_lang`, assumed values flagged
+in amber, with the "verify before the room" appendix.
 
 ## M2 — The archetype grammar
 
