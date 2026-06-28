@@ -129,6 +129,13 @@ in the inputs ledger.
 **Exit gate.** a meeting prepared from an uploaded prior deck + a pasted KPI table, with zero
 hand-entry of numbers.
 
+**Status.** ✅ **exit gate met** (foundational primitive). `tools/intake.py` reorganizes a **pasted
+KPI table** (CSV) + the **prior instance** (the series store = the prior deck's data) into a
+paste-ready, deduped, tagged `inputs:` ledger — every cell `sourced`, **zero hand-entry**. Demo:
+the Q3 ledger comes from `q3-kpis.csv` (current wins on dedup) + the Q2 store (gap-fills
+`nrr_target`); deterministic, round-trips into a manifest. Remaining (later): live connectors
+(Jira / Notion / Sheets) and a foreign-deck extractor via the `pptx`/`docx` skills.
+
 ## M6 — Live facilitation & post-meeting
 
 > Covers RFC §4 (facilitate / follow-up), §8 (human-runs-the-room).
