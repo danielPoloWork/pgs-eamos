@@ -1,0 +1,53 @@
+# discovery-product.yaml — discovery / workshop @ manager × product.
+schema_version: 1
+
+identity:
+  series_id: onboarding-discovery
+  instance: "D-2026.07"
+  series_name: "Discovery — Onboarding drop-off"
+  archetype: discovery
+  audience_altitude: manager
+  function: product
+
+context:
+  company_size: enterprise
+  industry: fintech
+  formality: low
+  output_lang: it
+
+objective: "Inquadrare il drop-off nell'onboarding e definire 2 ipotesi da testare."
+
+deliverables:
+  - { type: presentation, format: detailed, length: medium }
+
+inputs:
+  kpi.dropoff:
+    label: "Drop-off step KYC"
+    value: "38%"
+    provided: true
+    source: "analytics / funnel onboarding"
+    provenance: sourced
+  kpi.interviews:
+    label: "Interviste utente svolte"
+    value: "12"
+    provided: true
+    source: "research ops"
+    provenance: sourced
+
+content:
+  problem_statement:
+    title: "Problema"
+    lead: "Drop-off del {{kpi.dropoff}} allo step KYC; {{kpi.interviews}} interviste raccolte."
+    points:
+      - "Il drop-off concentra il rischio di conversione su un singolo step."
+  assumptions:
+    title: "Assunzioni"
+    body: "Assumiamo che l'attrito sia dovuto alla richiesta documenti, non alla latenza tecnica."
+  hypotheses:
+    title: "Ipotesi da testare"
+    decisions:
+      - "Se semplifichiamo l'upload documenti, il drop-off KYC scende sotto il 30%."
+      - "Se aggiungiamo una progress bar, l'abbandono percepito cala."
+  open_questions:
+    title: "Domande aperte"
+    body: "Quanta parte del drop-off è mobile vs desktop? Quali documenti causano più rifiuti?"

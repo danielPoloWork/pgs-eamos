@@ -63,6 +63,11 @@ deterministic composition engine (base archetype + ordered overlays, never a cro
 `decision` archetype, the c-level overlay dropping `context_framing`. Overlay engine = drop →
 reorder → cap, deterministic.
 
+**Archetype library.** **Seven archetypes** now ship — `review` · `decision` · `post-mortem` ·
+`planning` · `retrospective` · `discovery` · `one_on_one` — each with a reference manifest
+(gate-green, covered by the test suite). The sensitive `one_on_one` defaults to `confidential`; the
+engineering function pack composes onto `planning`/`retrospective` (a reliability section).
+
 ## M2b — Deliverable families
 
 > Covers RFC-0002 §3–§5 (IR families, the deliverable registry, params-in-bounds).

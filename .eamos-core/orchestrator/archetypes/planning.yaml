@@ -1,0 +1,20 @@
+# Archetype profile: planning (RFC-0001 §3, axis 1). Annual / release / sprint / PI planning.
+archetype: planning
+display_name: Planning
+
+structure:
+  - { id: objectives,        kind: summary,       required: true }
+  - { id: capacity,          kind: kpi_table,     required: true }
+  - { id: scope_commitments, kind: decision_list, required: true }
+  - { id: dependencies,      kind: risk_list,     required: true }
+  - { id: timeline,          kind: prose,         required: true }
+
+altitude_shaping:
+  manager: { max_slides: 20, jargon: full, lead_with: detail }
+  c-level:
+    max_slides: 10
+    jargon: none
+    lead_with: recommendation
+    order: [objectives, scope_commitments, capacity, dependencies, timeline]
+
+gates: [completeness, grounding-labeled, audience-fit]

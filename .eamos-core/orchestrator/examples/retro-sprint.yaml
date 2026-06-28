@@ -1,0 +1,46 @@
+# retro-sprint.yaml — retrospective @ manager × engineering.
+schema_version: 1
+
+identity:
+  series_id: platform-sprint-retro
+  instance: "S-2026.18"
+  series_name: "Sprint 2026.18 Retrospective — Platform"
+  archetype: retrospective
+  audience_altitude: manager
+  function: engineering
+
+context:
+  company_size: enterprise
+  industry: fintech
+  framework: SAFe
+  formality: low
+  output_lang: it
+
+objective: "Identificare 2 esperimenti di processo per il prossimo sprint."
+
+deliverables:
+  - { type: presentation, format: detailed, length: short }
+
+inputs:
+  kpi.team_satisfaction:
+    label: "Soddisfazione team (sondaggio)"
+    value: "3.8 / 5"
+    provided: true
+    source: "retro survey anonimo"
+    provenance: sourced
+
+content:
+  went_well:
+    title: "Cosa è andato bene"
+    body: "Pairing più frequente; soddisfazione team {{kpi.team_satisfaction}}. Zero incidenti in produzione."
+  to_improve:
+    title: "Cosa migliorare"
+    body: "Code review lente (lead time alto); troppi context switch a metà sprint."
+  experiments:
+    title: "Esperimenti"
+    decisions:
+      - "WIP limit di 2 PR per reviewer per accelerare le review."
+      - "Nessun nuovo task injection dopo il day-3 dello sprint."
+  reliability_notes:                  # added by the engineering function pack (axis 3)
+    title: "Note di affidabilità (SLO)"
+    body: "Zero incidenti nello sprint; error budget consumato sotto soglia. Mantenere il canary sul checkout."

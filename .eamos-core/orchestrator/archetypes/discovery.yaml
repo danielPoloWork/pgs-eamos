@@ -1,0 +1,15 @@
+# Archetype profile: discovery / workshop (RFC-0001 §3, axis 1). Product discovery, innovation lab.
+archetype: discovery
+display_name: Discovery / Workshop
+
+structure:
+  - { id: problem_statement, kind: summary,       required: true }
+  - { id: assumptions,       kind: prose,         required: true }
+  - { id: hypotheses,        kind: decision_list, required: true }
+  - { id: open_questions,    kind: prose,         required: true }
+
+altitude_shaping:
+  manager: { max_slides: 15, jargon: some, lead_with: detail }
+  ic:      { max_slides: 18, jargon: full, lead_with: detail }
+
+gates: [completeness, grounding-labeled, audience-fit]

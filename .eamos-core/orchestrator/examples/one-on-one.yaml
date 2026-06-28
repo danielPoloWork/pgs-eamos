@@ -1,0 +1,38 @@
+# one-on-one.yaml — 1:1 / development @ manager × engineering. SENSITIVE (RFC-0001 §11):
+# classified `confidential`; qualitative (no KPI ledger). Comp/PIP, if added, are tagged `sensitive`.
+schema_version: 1
+
+identity:
+  series_id: ic-development-1on1
+  instance: "2026-06"
+  series_name: "1:1 — IC development"
+  archetype: one_on_one
+  audience_altitude: manager
+  function: hr                         # no function pack → no added section (a 1:1 is a people process)
+
+classification: confidential
+
+context:
+  company_size: enterprise
+  industry: fintech
+  formality: low
+  output_lang: it
+
+objective: "Allineare su progressi e prossimo passo di crescita."
+
+deliverables:
+  - { type: presentation, format: detailed, length: short }
+
+content:
+  check_in:
+    title: "Check-in"
+    lead: "Come va il carico e il morale; cosa serve dal manager."
+    points:
+      - "Spazio per temi sollevati dalla persona."
+  progress:
+    title: "Progressi"
+    body: "Avanzamento sugli obiettivi del trimestre; feedback specifico e concreto."
+  development:
+    title: "Sviluppo"
+    decisions:
+      - "Definire un obiettivo di crescita per il prossimo mese con un primo passo."
