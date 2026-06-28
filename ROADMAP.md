@@ -53,6 +53,11 @@ deterministic composition engine (base archetype + ordered overlays, never a cro
 **Exit gate.** the same reference meeting renders correctly at two altitudes; a second archetype
 (decision/steering) renders end-to-end.
 
+**Status.** ✅ both met — `qbr-c-level` renders at c-level (leads with decisions) vs manager
+(detail-first order) from one manifest; `esc-decision` renders end-to-end through the new
+`decision` archetype, the c-level overlay dropping `context_framing`. Overlay engine = drop →
+reorder → cap, deterministic.
+
 ## M2b — Deliverable families
 
 > Covers RFC-0002 §3–§5 (IR families, the deliverable registry, params-in-bounds).

@@ -17,9 +17,15 @@ display_name: <human name, e.g. "Review / Status">
 structure:
   - { id: <section-id, stable English key>, kind: <block-kind>, required: <true|false> }
 
-# Altitude shaping (axis 2): same structure, different depth/length/emphasis.
+# Altitude shaping = the per-altitude overlay (axis 2): same base structure, composed differently.
+# Applied deterministically as drop -> reorder -> slide-budget cap; never a cross-product (RFC §3).
 altitude_shaping:
-  <altitude>: { max_slides: <int>, jargon: <none|some|full>, lead_with: <recommendation|detail> }
+  <altitude>:
+    max_slides: <int>                  # caps the deck (audience-fit gate)
+    jargon:     <none|some|full>       # advisory
+    lead_with:  <recommendation|detail>
+    drop:       [<section-id>, ...]    # remove sections — a `required` section is never dropped
+    order:      [<section-id>, ...]    # stable reorder: listed ids lead, unlisted keep their order
 
 # Deliverable-parameter bounds by altitude (RFC-0002 §5) — the enterprise guardrail. A requested
 # deliverable param outside `allow` fails the deliverable-params-in-bounds gate.
@@ -39,6 +45,7 @@ gates: [<gate-id>, ...]      # the gates this archetype asserts (RFC-0001 §10)
 | `prose` | `body` | `prose` |
 | `risk_list` | `risks: [{risk, ask}]` | `risk` |
 | `decision_list` | `decisions: [..]` | `decision` |
+| `option_list` | `options: [{name, pro, con}]` | `option` |
 
 ## Authoring guidance
 
