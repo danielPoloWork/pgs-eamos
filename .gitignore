@@ -1,0 +1,10 @@
+# Render outputs (the deck-IR + emitted deliverables are reproducible from the manifest).
+build/
+
+# Python
+__pycache__/
+*.pyc
+
+# Editors
+.idea/
+.vscode/
