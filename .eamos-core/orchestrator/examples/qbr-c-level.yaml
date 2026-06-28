@@ -4,10 +4,20 @@
 schema_version: 1
 
 identity:
+  series_id: platform-bu-business-review   # stable across instances (RFC-0001 §9, §16-Q2)
+  instance: "Q3-2026"                       # this instance of the series
   series_name: "Q3-2026 Business Review — Platform BU"
   archetype: review                 # axis 1
   audience_altitude: c-level        # axis 2
   function: whole-company           # axis 3
+
+# The moat (RFC-0001 §9): what this instance pulls forward from the series store of the prior one.
+carry_forward:
+  from_instance: "Q2-2026"
+  decisions: true
+  open_actions: true
+  rolling_risks: true
+  kpi_history: true
 
 context:                            # axis 4
   company_size: enterprise

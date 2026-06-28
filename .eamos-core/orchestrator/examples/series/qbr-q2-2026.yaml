@@ -1,0 +1,76 @@
+# qbr-q2-2026.yaml — the PRIOR instance of the same series as qbr-c-level.yaml (Q3).
+# Used to demonstrate the moat (RFC-0001 §9): closing Q2 writes the series store, then opening Q3
+# pre-populates from it (prior decisions, still-open actions, KPI movement).
+schema_version: 1
+
+identity:
+  series_id: platform-bu-business-review   # SAME series as the Q3 instance
+  instance: "Q2-2026"
+  series_name: "Q2-2026 Business Review — Platform BU"
+  archetype: review
+  audience_altitude: c-level
+  function: whole-company
+
+context:
+  company_size: enterprise
+  industry: fintech
+  regulatory: [SOX, GDPR]
+  framework: SAFe
+  formality: high
+  output_lang: it
+
+objective: "Approvare il piano H1 e i due rischi major del trimestre."
+
+deliverables:
+  - { type: presentation, format: speaker, length: medium }
+
+inputs:
+  kpi.arr:
+    label: "ARR"
+    value: "11.8M€"
+    provided: true
+    source: "dashboard-CS / Q2 export"
+    provenance: sourced
+  kpi.arr_target:
+    label: "ARR target H1"
+    value: "12.5M€"
+    provided: true
+    source: "plan H1 (board-approved)"
+    provenance: sourced
+  kpi.nrr:
+    label: "Net revenue retention"
+    value: "105%"
+    provided: true
+    source: "dashboard-CS / Q2 export"
+    provenance: sourced
+  kpi.nrr_target:
+    label: "NRR target"
+    value: "110%"
+    provided: true
+    source: "plan H1"
+    provenance: sourced
+
+content:
+  exec_summary:
+    title: "Sintesi esecutiva"
+    lead: "Trimestre in linea: ARR {{kpi.arr}} contro target {{kpi.arr_target}}; NRR {{kpi.nrr}}."
+    points:
+      - "Due rischi major aperti richiedono azioni con owner."
+  kpi_vs_target:
+    title: "KPI vs target"
+    rows:
+      - { metric_binding: kpi.arr, target_binding: kpi.arr_target }
+      - { metric_binding: kpi.nrr, target_binding: kpi.nrr_target }
+  variance_commentary:
+    title: "Commento agli scostamenti"
+    body: "NRR {{kpi.nrr}} sotto target {{kpi.nrr_target}}: avviato il programma retention."
+  risks_and_asks:
+    title: "Rischi e richieste"
+    risks:
+      - { risk: "Churn enterprise in crescita", ask: "Avviare il programma retention enterprise (owner: CS)" }
+      - { risk: "Audit SOX non completato", ask: "Completare l'audit SOX sul reporting (owner: Eng)" }
+  decisions_required:
+    title: "Decisioni richieste"
+    decisions:
+      - "Approvare il piano H1 (ARR target {{kpi.arr_target}})."
+      - "Sbloccare 2 assunzioni per il programma retention."

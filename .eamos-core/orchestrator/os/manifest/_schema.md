@@ -8,10 +8,21 @@ The reference instance is [`examples/qbr-c-level.yaml`](../../examples/qbr-c-lev
 schema_version: <int>
 
 identity:
-  series_name:       <str>          # the stable series name (RFC-0001 §9, series identity)
+  series_id:         <slug>         # the STABLE key across instances (RFC-0001 §9, §16-Q2) — the moat
+  instance:          <str>          # this instance, e.g. "Q3-2026"
+  series_name:       <str>          # human name of this instance (not the key)
   archetype:         <archetype id> # axis 1 — selects archetypes/<archetype>.yaml
   audience_altitude: <altitude>     # axis 2
   function:          <function>     # axis 3
+
+# The moat (RFC-0001 §9). What an opening instance pulls from the prior one's series store
+# (os/series/_schema.md), via tools/series.py. Omit for a one-off (non-recurring) meeting.
+carry_forward:
+  from_instance: <str>              # the prior instance, e.g. "Q2-2026"
+  decisions:     <bool>
+  open_actions:  <bool>
+  rolling_risks: <bool>
+  kpi_history:   <bool>
 
 context:                            # axis 4
   company_size: <str>

@@ -110,6 +110,13 @@ the `series-updated` gate; the Q3 QBR opening pre-populated from the Q2 instance
 **Exit gate.** a two-instance series (Q2 → Q3) where Q3 opens knowing Q2's decisions, open
 actions, and KPI deltas.
 
+**Status.** ✅ **exit gate met.** The series store (`os/series/`), `series.py close|open`, and the
+manifest's `series_id` / `instance` / `carry_forward` ship. Closing **Q2** writes the store; opening
+**Q3** surfaces Q2's decisions, the still-open actions (with owners), and **KPI movement**
+(ARR 11.8M€ → 12.4M€ ↑, NRR 105% → 108% ↑). Store + digest deterministic; the store never invents a
+number (KPI history = the instance's sourced ledger cells). This is the capability EADOS does **not**
+demonstrate — the moat.
+
 ## M5 — Intake & integrations
 
 > Covers RFC-0001 §2-G3, §15-M5; RFC-0002 §6 (the source-reorganization primitive).
