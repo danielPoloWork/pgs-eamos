@@ -14,8 +14,10 @@ The store is JSON (machine state, deterministic: `sort_keys`, `ensure_ascii=Fals
   "series_id": "<stable slug, e.g. platform-bu-business-review>",
   "instances": ["<instance id>", "..."],          // ordered history, e.g. ["Q2-2026"]
   "decision_log": [ { "instance": "<id>", "decision": "<resolved text>" } ],
-  "open_actions": [ { "id": "<instance>-A<n>", "action": "<text>", "context": "<the risk>",
-                      "from": "<instance>", "status": "open|closed" } ],
+  "open_actions": [ { "id": "<instance>-A<n>", "action": "<text>", "from": "<instance>",
+                      "status": "open|closed",
+                      "context": "<the risk>",      // when derived from a planned ask (series close)
+                      "owner": "<who>", "due": "<date>" } ],  // when captured in follow-up (M6)
   "rolling_risks": [ { "risk": "<text>", "since": "<instance>", "status": "open|closed" } ],
   "kpi_history":  { "<kpi key>": { "<instance>": "<value>", "...": "..." } }
 }

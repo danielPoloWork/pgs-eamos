@@ -1,0 +1,10 @@
+# qbr-q3-outcomes.yaml — what a human notetaker CAPTURED during the Q3 session.
+# The agent never invents these (human-runs-the-room, RFC-0001 §8); followup consumes them.
+instance: "Q3-2026"
+decisions:
+  - "Approvato il re-forecast H2 a 13.0M€."
+  - "Approvato il budget retention dedicato."
+actions:
+  - { action: "Negoziare la clausola di exit col vendor X", owner: "Legal", due: "2026-07-15" }
+  - { action: "Avviare l'audit di sicurezza pre-go-live", owner: "Eng", due: "2026-07-31" }
+notes: "La revisione del churn è rinviata al QBR Q4 (dato ancora da verificare)."
