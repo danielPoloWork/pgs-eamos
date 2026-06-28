@@ -1,0 +1,6 @@
+# Function pack: finance (RFC-0001 §3, axis 3). Schema: _schema.md.
+function: finance
+display_name: Finance
+terminology: { unit: "€", focus: "variance, forecast, attestation" }
+add_sections:
+  - { id: variance_attestation, kind: prose, required: true, after: kpi_vs_target }   # SOX-adjacent

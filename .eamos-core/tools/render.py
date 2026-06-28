@@ -24,6 +24,7 @@ import yamlmini  # noqa: E402
 CORE = os.path.dirname(TOOLS)
 ARCHETYPES = os.path.join(CORE, "orchestrator", "archetypes")
 DELIVERABLES = os.path.join(CORE, "orchestrator", "os", "deliverables")
+FUNCTIONS = os.path.join(CORE, "orchestrator", "functions")
 
 BIND_RE = re.compile(r"\{\{\s*([a-z][a-z0-9_.]*)\s*\}\}")
 # The "verify before the room" label for an assumed value, by output language (RFC-0001 §6).
@@ -141,6 +142,35 @@ def load_deliverable(dtype):
         return yamlmini.load_yaml(fh.read())
 
 
+def load_function(name):
+    """A function pack (RFC-0001 §3, axis 3), or None. Fills content + may add a regulated section."""
+    if not name:
+        return None
+    path = os.path.join(FUNCTIONS, f"{name}.yaml")
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as fh:
+        return yamlmini.load_yaml(fh.read())
+
+
+def apply_function(structure, pack):
+    """Insert a function pack's sections into the archetype structure (axis 3). Deterministic; an
+    `after:` anchors the insert (else appended). The archetype and altitude axes are untouched."""
+    secs = list(structure)
+    for add in (pack or {}).get("add_sections", []) or []:
+        sec = {"id": add["id"], "kind": add.get("kind", "prose"), "required": bool(add.get("required"))}
+        idx = next((i for i, s in enumerate(secs) if s["id"] == add.get("after")), None)
+        secs.insert(idx + 1 if idx is not None else len(secs), sec)
+    return secs
+
+
+def composed_structure(archetype, function_name, shaping):
+    """archetype structure + function overlay (axis 3) + altitude overlay (axis 2) — in that order.
+    Base + ordered overlays, never a cross-product (RFC-0001 §3)."""
+    base = apply_function(archetype.get("structure", []) or [], load_function(function_name))
+    return apply_overlays(base, shaping)
+
+
 def _resolve_params(reg, requested):
     """Merge a deliverable's requested params over the registry defaults."""
     params = (reg or {}).get("params", {}) or {}
@@ -158,11 +188,11 @@ def _find_deliverable(manifest, dtype):
     return {"type": dtype}
 
 
-def build_deck_ir(manifest, archetype, altitude=None):
+def build_deck_ir(manifest, archetype, altitude=None, function=None):
     """Compose the deck-IR and return (deck_ir, acc). Pure and deterministic.
 
-    `altitude` overrides the manifest's audience_altitude — lets one manifest render at several
-    altitudes (the M2 exit gate: the same meeting renders correctly at two altitudes)."""
+    `altitude` / `function` override the manifest's values — letting one manifest render at several
+    altitudes (M2) or with a different function pack swapped in (M3)."""
     acc = _new_acc()
     ident = manifest.get("identity", {}) or {}
     ctx = manifest.get("context", {}) or {}
@@ -170,15 +200,15 @@ def build_deck_ir(manifest, archetype, altitude=None):
     content = manifest.get("content", {}) or {}
     lang = ctx.get("output_lang", "en")
     altitude = altitude or ident.get("audience_altitude", "")
+    function = function or ident.get("function", "")
     shaping = (archetype.get("altitude_shaping", {}) or {}).get(altitude, {}) or {}
 
     deliverables = manifest.get("deliverables", []) or [{"type": "presentation"}]
     deliverable = deliverables[0] if isinstance(deliverables, list) and deliverables else {}
 
-    # Compose the effective structure via the altitude overlay (drop/reorder/cap), then render
-    # each section. The overlay is deterministic and never a cross-product (RFC-0001 §3).
-    structure = archetype.get("structure", []) or []
-    effective = apply_overlays(structure, shaping)
+    # Compose: archetype structure + function overlay (axis 3) + altitude overlay (axis 2), then
+    # render each section. Deterministic; never a cross-product (RFC-0001 §3).
+    effective = composed_structure(archetype, function, shaping)
     slides = [_build_section(sec, content, ledger, acc, lang) for sec in effective]
 
     review_appendix = [
@@ -204,7 +234,7 @@ def build_deck_ir(manifest, archetype, altitude=None):
     return deck_ir, acc
 
 
-def build_infographic_ir(manifest, archetype, altitude=None):
+def build_infographic_ir(manifest, archetype, altitude=None, function=None):
     """Project the same grounded content into an infographic-IR (RFC-0002 §2, §3). A peer of
     build_deck_ir over the SAME ledger — so a value cannot diverge between the deck and the
     infographic (RFC-0002 §7). Picks the headline stats, the lead, and the decision asks."""
@@ -216,7 +246,7 @@ def build_infographic_ir(manifest, archetype, altitude=None):
     lang = ctx.get("output_lang", "en")
     altitude = altitude or ident.get("audience_altitude", "")
     shaping = (archetype.get("altitude_shaping", {}) or {}).get(altitude, {}) or {}
-    effective = apply_overlays(archetype.get("structure", []) or [], shaping)
+    effective = composed_structure(archetype, function or ident.get("function", ""), shaping)
 
     lead, stats, asks = "", [], []
     for sec in effective:
@@ -268,7 +298,7 @@ def build_infographic_ir(manifest, archetype, altitude=None):
     return info_ir, acc
 
 
-def build_data_ir(manifest, archetype, altitude=None):
+def build_data_ir(manifest, archetype, altitude=None, function=None):
     """Project the KPI rows into a data-IR (RFC-0002 §3) — the table/chart family. A peer of the
     deck-IR over the SAME ledger (§7): the KPI table cannot diverge from the deck or infographic.
     Each row carries its source (for the hardcode-provenance note) and an assumed flag."""
@@ -280,7 +310,7 @@ def build_data_ir(manifest, archetype, altitude=None):
     lang = ctx.get("output_lang", "en")
     altitude = altitude or ident.get("audience_altitude", "")
     shaping = (archetype.get("altitude_shaping", {}) or {}).get(altitude, {}) or {}
-    effective = apply_overlays(archetype.get("structure", []) or [], shaping)
+    effective = composed_structure(archetype, function or ident.get("function", ""), shaping)
 
     rows = []
     for sec in effective:
@@ -329,6 +359,7 @@ def main():
     ap.add_argument("manifest", help="path to a meeting manifest (e.g. examples/qbr-c-level.yaml)")
     ap.add_argument("--out", help="output path for the IR JSON (default: stdout)")
     ap.add_argument("--altitude", help="override the manifest's audience_altitude (e.g. manager)")
+    ap.add_argument("--function", help="override the manifest's function pack (e.g. engineering)")
     ap.add_argument("--ir", choices=["deck", "infographic", "data"], default="deck",
                     help="which IR projection to emit (default: deck)")
     args = ap.parse_args()
@@ -337,13 +368,13 @@ def main():
         manifest = yamlmini.load_yaml(fh.read())
     archetype = load_archetype(manifest.get("identity", {}).get("archetype", "review"))
     if args.ir == "infographic":
-        ir, acc = build_infographic_ir(manifest, archetype, altitude=args.altitude)
+        ir, acc = build_infographic_ir(manifest, archetype, altitude=args.altitude, function=args.function)
         kind_note = f"{len(ir['stats'])} stats"
     elif args.ir == "data":
-        ir, acc = build_data_ir(manifest, archetype, altitude=args.altitude)
+        ir, acc = build_data_ir(manifest, archetype, altitude=args.altitude, function=args.function)
         kind_note = f"{len(ir['rows'])} rows"
     else:
-        ir, acc = build_deck_ir(manifest, archetype, altitude=args.altitude)
+        ir, acc = build_deck_ir(manifest, archetype, altitude=args.altitude, function=args.function)
         kind_note = f"{len(ir['slides'])} slides"
 
     text = json.dumps(ir, indent=2, ensure_ascii=False) + "\n"

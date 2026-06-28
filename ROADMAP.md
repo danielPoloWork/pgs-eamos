@@ -96,6 +96,13 @@ R&D / Ops), including the regulated sections some functions add (HR comp/PIP).
 **Exit gate.** an RCA @ Manager × Engineering and a QBR @ C-level × Finance both render from the
 same archetypes with only the function pack swapped.
 
+**Status.** ✅ **exit gate met.** Function packs (`orchestrator/functions/`, axis 3) compose as an
+overlay — archetype → **function** → altitude — inserting a department's regulated section.
+`qbr-finance` (review × c-level × **finance**) gains `variance_attestation` (SOX); `rca-eng`
+(the new **post-mortem** archetype × manager × **engineering**) gains `reliability_notes` (SLO).
+Proven swappable: the same review manifest with `--function finance` vs `--function engineering`
+differs **only** in that one section. `render.py --function` override; deterministic.
+
 ## M4 — The series manifest (the moat)
 
 > Covers RFC §9. **Pulled forward** of its instinctive position because it is the moat and the
