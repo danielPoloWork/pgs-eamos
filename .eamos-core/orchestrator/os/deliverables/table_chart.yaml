@@ -1,0 +1,10 @@
+# Deliverable: table_chart (data-IR -> XLSX). Schema: _schema.md. RFC-0002 §4, §11-2.
+type: table_chart
+ir_family: data-IR
+params:
+  # First-class chart types (RFC-0002 §11-2 resolved): line, bar, stacked_bar, variance — they
+  # cover >80% of cases. `none` = table only (e.g. mixed-unit KPIs). Others (scatter, sankey,
+  # radar, heatmap…) arrive later as plugins.
+  chart:  { enum: [none, line, bar, stacked_bar, variance], default: bar }
+  intent: { kind: free_text }
+emitter: emit_xlsx
