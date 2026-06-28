@@ -20,6 +20,12 @@ import series      # noqa: E402
 import intake      # noqa: E402
 import facilitate  # noqa: E402
 
+try:
+    import pptx  # noqa: F401
+    HAS_PPTX = True
+except ImportError:
+    HAS_PPTX = False
+
 Q2 = os.path.join(EX, "series", "qbr-q2-2026.yaml")
 Q3 = os.path.join(EX, "qbr-c-level.yaml")
 OUTCOMES = os.path.join(EX, "series", "qbr-q3-outcomes.yaml")
@@ -98,6 +104,21 @@ class TestRedaction(unittest.TestCase):
         cell = m["inputs"]["kpi.churn_named_account"]
         self.assertIn("redatto", cell["value"])
         self.assertNotIn("Rossi", cell["value"])
+
+
+@unittest.skipUnless(HAS_PPTX, "python-pptx not installed (the deck connector is optional)")
+class TestIntakeDeck(unittest.TestCase):
+    def test_deck_roundtrip(self):
+        import emit_pptx
+        m = _yaml(Q3)
+        deck_ir, _ = render.build_deck_ir(m, render.load_archetype(m["identity"]["archetype"]))
+        with tempfile.TemporaryDirectory() as d:
+            pptx_path = os.path.join(d, "deck.pptx")
+            emit_pptx.build_pptx(deck_ir, pptx_path)
+            cells = intake.from_deck(pptx_path)
+        self.assertIn("kpi.arr", cells)                 # the deck's KPIs extract back into the ledger
+        self.assertEqual(cells["kpi.arr"]["value"], "12.4M€")
+        self.assertEqual(cells["kpi.arr"]["via"], "intake/deck")
 
 
 if __name__ == "__main__":

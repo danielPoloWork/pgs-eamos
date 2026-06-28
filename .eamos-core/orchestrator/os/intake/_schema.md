@@ -11,9 +11,20 @@ M5 (connectors are the later half).
 |--------|------|---------|
 | **Pasted KPI table** | `--csv <file>` | one cell per row; header (case-insensitive) `key,value[,label,source]` |
 | **Prior instance** | `--series <store.json>` | the prior deck's KPIs (the series store, RFC-0001 §9) |
+| **Uploaded deck** | `--deck <file.pptx>` | metric-looking `Label: value` lines → cells (needs python-pptx) |
 
-A *foreign* (non-EAMOS) uploaded deck is extracted via the `pptx`/`docx` skills into the same shape —
-a later connector; the primitive itself stays dependency-free and structured.
+## Connectors
+
+Each source is a **connector**: a function `path → {key: {label, value, source, via}}`. Built-in:
+`from_csv`, `from_series`, `from_deck` (the `.pptx` extractor — the only one needing python-pptx; the
+CSV/series paths stay dependency-free). Precedence on a key collision (later wins): **series → deck →
+csv** — the prior fills gaps, an uploaded deck refines, the pasted table is authoritative.
+
+To add a connector (Jira / Notion / Sheets), implement one function returning the same cell shape:
+- **Sheets** → export to CSV and use `--csv` (no new code).
+- **Jira / Notion** → an API client returning cells (`via: intake/jira` …); the call + auth are
+  environment-specific and live behind the same `path → cells` contract. Not bundled (no creds) — the
+  contract is the extension point.
 
 ## Rules
 

@@ -150,8 +150,13 @@ hand-entry of numbers.
 KPI table** (CSV) + the **prior instance** (the series store = the prior deck's data) into a
 paste-ready, deduped, tagged `inputs:` ledger — every cell `sourced`, **zero hand-entry**. Demo:
 the Q3 ledger comes from `q3-kpis.csv` (current wins on dedup) + the Q2 store (gap-fills
-`nrr_target`); deterministic, round-trips into a manifest. Remaining (later): live connectors
-(Jira / Notion / Sheets) and a foreign-deck extractor via the `pptx`/`docx` skills.
+`nrr_target`); deterministic, round-trips into a manifest.
+
+**Connectors.** Sources are now pluggable connectors (`path → cells`): `from_csv`, `from_series`,
+and the **foreign-deck extractor** `--deck <file.pptx>` (extracts metric `Label: value` lines;
+optional python-pptx). Precedence **series → deck → csv**. Proven by a **round-trip** (a generated
+deck → extracted back into the ledger). Remaining (need credentials, not bundled): the live
+**Jira / Notion** API connectors — documented behind the same contract; **Sheets** = CSV export.
 
 ## M6 — Live facilitation & post-meeting
 
