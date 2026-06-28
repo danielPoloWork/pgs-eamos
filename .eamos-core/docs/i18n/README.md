@@ -12,7 +12,8 @@ is a manifest field, not a translation of the system.
 
 | Target | File | Source |
 |--------|------|--------|
-| Italiano (`it`) | [it/README.md](it/README.md) | [`README.md`](../../../README.md) |
+| 简体中文 (`zh-Hans`) | [zh-Hans/README.md](zh-Hans/README.md) | [`README.md`](../../../README.md) |
+| 日本語 (`ja`) | [ja/README.md](ja/README.md) | [`README.md`](../../../README.md) |
 
 ## Adding or updating a translation
 

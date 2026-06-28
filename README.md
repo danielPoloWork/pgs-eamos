@@ -9,8 +9,8 @@
 [![status: pre-1.0](https://img.shields.io/badge/status-pre--1.0-orange.svg)](ROADMAP.md)
 [![grounding: labeled, never fabricated](https://img.shields.io/badge/grounding-labeled%2C%20never%20fabricated-success.svg)](.eamos-core/docs/rfc/0001-eamos-meeting-os.md)
 
-> **🌐 Lingue · Languages:** [Italiano](.eamos-core/docs/i18n/it/README.md) — derived from this
-> English source (the source of truth). Policy & freshness:
+> **🌐 Translations:** [简体中文](.eamos-core/docs/i18n/zh-Hans/README.md) · [日本語](.eamos-core/docs/i18n/ja/README.md)
+> — derived from this English source (the source of truth). Policy & freshness:
 > [`.eamos-core/docs/i18n/`](.eamos-core/docs/i18n/README.md).
 
 EAMOS turns a maintainer's inputs into the **material and the regie** for an enterprise meeting —
