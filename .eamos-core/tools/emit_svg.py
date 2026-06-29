@@ -171,23 +171,91 @@ def build_mindmap_svg(ir):
     return "\n".join(parts) + "\n"
 
 
+def build_topology_svg(ir):
+    """A deterministic 'layered' system-topology diagram from a topology-IR (RFC-0004): typed nodes
+    placed in a grid by DECLARATION ORDER (a pure function of the order — no force-directed, no
+    randomness, RFC-0002 §11-1) + directed, pattern-labeled edges. Assumed nodes/edges are amber."""
+    bg, accent, body, amber, muted, card = THEMES["professional"]
+    lang = ir.get("output_lang", "en")
+    nodes, edges = ir.get("nodes", []) or [], ir.get("edges", []) or []
+    cols, nbw, nbh, gx, gy, m, top = 3, 240, 66, 90, 76, 50, 96
+    rows = (len(nodes) + cols - 1) // cols or 1
+    W = m * 2 + cols * nbw + (cols - 1) * gx
+    H = top + rows * nbh + (rows - 1) * gy + 72
+
+    pos = {}                                              # id -> (x, y, center_x, center_y)
+    for i, nd in enumerate(nodes):
+        c, r = i % cols, i // cols
+        x, yy = m + c * (nbw + gx), top + r * (nbh + gy)
+        pos[nd.get("id")] = (x, yy, x + nbw // 2, yy + nbh // 2)
+
+    parts = [f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">',
+             f'<rect width="{W}" height="{H}" fill="{bg}"/>',
+             f'<defs>'
+             f'<marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">'
+             f'<path d="M0,0 L9,3 L0,6 Z" fill="{muted}"/></marker>'
+             f'<marker id="arA" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">'
+             f'<path d="M0,0 L9,3 L0,6 Z" fill="{amber}"/></marker>'
+             f'</defs>']
+
+    seg, _ = _text(m, 60, wrap(ir.get("title", ""), (W - 2 * m) // 17), 28, accent, "bold", 34)
+    parts.append(seg)
+
+    for e in edges:                                       # edges first, under the node boxes
+        a, b = pos.get(e.get("from")), pos.get(e.get("to"))
+        if not a or not b:
+            continue
+        col = amber if e.get("assumed") else muted
+        dash = ' stroke-dasharray="6 4"' if e.get("assumed") else ""
+        mk = "arA" if e.get("assumed") else "ar"
+        x1, y1, x2, y2 = a[2], a[3], b[2], b[3]
+        parts.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{col}" '
+                     f'stroke-width="1.6"{dash} marker-end="url(#{mk})"/>')
+        lab = e.get("pattern", "")
+        lab = f'{lab}: {e["label"]}' if e.get("label") else lab
+        seg, _ = _text((x1 + x2) // 2, (y1 + y2) // 2 - 4, [esc(lab)], 11, col)
+        parts.append(seg)
+
+    for nd in nodes:
+        x, yy, _, _ = pos[nd.get("id")]
+        assumed = nd.get("assumed")
+        stroke, txt = (amber, amber) if assumed else (accent, body)
+        parts.append(f'<rect x="{x}" y="{yy}" width="{nbw}" height="{nbh}" rx="10" fill="{card}" '
+                     f'stroke="{stroke}" stroke-width="{2 if assumed else 1}"/>')
+        seg, _ = _text(x + 14, yy + 27, wrap(nd.get("label", ""), (nbw - 28) // 8), 14, txt, "bold")
+        parts.append(seg)
+        seg, _ = _text(x + 14, yy + 50, [esc(nd.get("kind", ""))], 11, muted)
+        parts.append(seg)
+
+    n = len(ir.get("review_appendix", []))
+    if n:
+        seg, _ = _text(m, H - 26, [f'⚠ {n} {_lab(lang, "verify")}'], 14, amber, "bold")
+        parts.append(seg)
+
+    parts.append("</svg>")
+    return "\n".join(parts) + "\n"
+
+
 def main():
-    ap = argparse.ArgumentParser(description="Emit an SVG from an infographic-IR or graph-IR.")
-    ap.add_argument("ir_json", help="path to an infographic-IR or graph-IR (mindmap) JSON file")
+    ap = argparse.ArgumentParser(description="Emit an SVG from an infographic-IR, graph-IR, or topology-IR.")
+    ap.add_argument("ir_json", help="path to an infographic-IR, graph-IR (mindmap), or topology-IR JSON file")
     ap.add_argument("--out", help="output .svg path (default: stdout)")
     args = ap.parse_args()
 
     with open(args.ir_json, encoding="utf-8") as fh:
         ir = json.load(fh)
-    is_map = ir.get("deliverable") == "mindmap"
-    svg = build_mindmap_svg(ir) if is_map else build_svg(ir)
+    deliv = ir.get("deliverable")
+    if deliv == "mindmap":
+        svg, kind, note = build_mindmap_svg(ir), "mindmap", f"{len(ir.get('branches', []))} branches"
+    elif deliv == "architecture":
+        svg, kind, note = build_topology_svg(ir), "topology", f"{len(ir.get('nodes', []))} nodes"
+    else:
+        svg, kind, note = build_svg(ir), "infographic", f"{len(ir.get('stats', []))} stats"
     if args.out:
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
         with open(args.out, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(svg)
-        n = len(ir.get("branches", [])) if is_map else len(ir.get("stats", []))
-        print(f"emit_svg: OK — {'mindmap' if is_map else 'infographic'} ({n} "
-              f"{'branches' if is_map else 'stats'}) -> {args.out}")
+        print(f"emit_svg: OK — {kind} ({note}) -> {args.out}")
     else:
         sys.stdout.write(svg)
     return 0

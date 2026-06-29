@@ -33,7 +33,8 @@ class TestDeterminism(unittest.TestCase):
         for name in REFS:
             m, arch = load(name)
             for builder in (render.build_deck_ir, render.build_infographic_ir,
-                            render.build_data_ir, render.build_graph_ir, render.build_quiz_ir):
+                            render.build_data_ir, render.build_graph_ir, render.build_quiz_ir,
+                            render.build_topology_ir):
                 with self.subTest(manifest=name, ir=builder.__name__):
                     a, _ = builder(m, arch)
                     b, _ = builder(m, arch)
@@ -94,6 +95,23 @@ class TestPreWorkPack(unittest.TestCase):
         for sid in ("use_case_matrix", "moscow_requirements", "architectural_constraints"):
             self.assertIn(sid, ids)                        # the pack's three sections compose in
         self.assertLess(ids.index("use_case_matrix"), ids.index("options"))   # pre-work precedes options
+
+
+class TestTopology(unittest.TestCase):
+    def test_topology_ir_nodes_edges_grounding_and_svg(self):
+        import emit_svg
+        m, arch = load("vendor-prework")
+        ir, _ = render.build_topology_ir(m, arch)
+        self.assertEqual((len(ir["nodes"]), len(ir["edges"])), (4, 3))
+        node_ids = {n["id"] for n in ir["nodes"]}
+        self.assertTrue(all(e["from"] in node_ids and e["to"] in node_ids for e in ir["edges"]))
+        vendorx = next(n for n in ir["nodes"] if n["id"] == "vendorx")
+        self.assertTrue(vendorx["assumed"])                       # the vendor system is assumed
+        self.assertIn("⟨", vendorx["label"])                      # rendered labeled
+        self.assertIn("sys.vendorx", {a["binding"] for a in ir["review_appendix"]})  # + in the appendix
+        svg = emit_svg.build_topology_svg(ir)
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("ERP aziendale", svg)                       # a sourced node renders plain
 
 
 class TestScorecard(unittest.TestCase):
