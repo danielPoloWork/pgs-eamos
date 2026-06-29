@@ -15,7 +15,7 @@ import render      # noqa: E402
 import eamos_lint  # noqa: E402
 
 REFS = ["qbr-c-level", "esc-decision", "qbr-finance", "rca-eng", "board-confidential",
-        "planning-release", "retro-sprint", "discovery-product", "one-on-one"]
+        "planning-release", "retro-sprint", "discovery-product", "one-on-one", "vendor-prework"]
 
 
 def load(name):

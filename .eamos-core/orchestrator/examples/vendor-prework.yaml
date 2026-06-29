@@ -1,0 +1,162 @@
+# vendor-prework.yaml — decision pre-work session @ manager × pre-work (#26).
+# A build-vs-buy working session: use-case matrix, MoSCoW requirements, and architectural
+# constraints captured BEFORE options/scoring, composed via the `pre-work` function pack. Manager
+# altitude (no altitude_shaping for decision) keeps the pre-work sections in structural order, ahead
+# of the options. Renders end-to-end, gate-green; the no-action baseline (#30) is present.
+schema_version: 1
+
+identity:
+  series_name: "Pre-work — Selezione piattaforma H2"
+  archetype: decision
+  audience_altitude: manager
+  function: pre-work
+
+context:
+  company_size: enterprise
+  industry: fintech
+  regulatory: [SOX]
+  framework: SAFe
+  formality: medium
+  output_lang: it
+
+objective: "Preparare la decisione build-vs-buy: use-case, requisiti e vincoli architetturali."
+
+# Solution-discovery intake (L0/L1/L2, #29) — the capture layer these pre-work sections render from.
+discovery_intake:
+  intent: "Sostenere i volumi H2 con una piattaforma che scala senza degrado (capability, non il tool)"
+  domain:
+    stakeholders: ["Business owner", "IT / Architettura", "Sicurezza / Compliance", "Finance"]
+    existing_systems: ["Piattaforma attuale", "ERP", "SSO / AD"]
+    current_pain: "La piattaforma attuale non regge i volumi previsti per H2"
+  constraints:
+    volume: "Picco volumi H2 oltre la capacità attuale"
+    budget_range: "1–2M€"
+    timing: "Go-live entro H2-2026"
+    dependencies: ["Conformità SOX", "Integrazione dati con ERP"]
+
+deliverables:
+  - { type: presentation, format: detailed, length: medium }
+
+inputs:
+  # Use-case matrix (freq × criticità × dati)
+  usecase.kyc:
+    label: "Onboarding KYC"
+    value: "freq: alta · criticità: H · dati: PII"
+    provided: true
+    source: "analisi processi onboarding"
+    provenance: sourced
+  usecase.reporting:
+    label: "Reporting regolamentare"
+    value: "freq: media · criticità: H · dati: finanziari"
+    provided: true
+    source: "owner compliance"
+    provenance: sourced
+  usecase.export:
+    label: "Export dati cliente"
+    value: "freq: bassa · criticità: M · dati: PII"
+    provided: true
+    source: "analisi processi"
+    provenance: sourced
+  # MoSCoW requirements
+  req.sso:
+    label: "SSO / AD"
+    value: "Must"
+    provided: true
+    source: "policy IT"
+    provenance: sourced
+  req.api:
+    label: "API documentate"
+    value: "Must"
+    provided: true
+    source: "linee guida architettura"
+    provenance: sourced
+  req.residency:
+    label: "Data residency UE"
+    value: "Should"
+    provided: true
+    source: "compliance GDPR/SOX"
+    provenance: sourced
+  req.sla:
+    label: "SLA 99.9%"
+    value: "Could"
+    provided: false
+    provenance: assumed
+    assumption: "SLA atteso; da confermare nell'offerta vendor"
+    fill_from: "RFP vendor"
+    review_required: true
+  # Architectural constraints
+  arch.deploy:
+    label: "Modello di deploy"
+    value: "cloud UE (no on-prem)"
+    provided: true
+    source: "policy infrastruttura"
+    provenance: sourced
+  arch.integration:
+    label: "Integrazioni obbligatorie"
+    value: "ERP, SSO/AD"
+    provided: true
+    source: "mappa architetturale"
+    provenance: sourced
+  arch.latency:
+    label: "Latenza target"
+    value: "< 300ms p95"
+    provided: true
+    source: "requisiti di servizio"
+    provenance: sourced
+  # Decision inputs
+  cost.build:
+    label: "Costo build in-house"
+    value: "1.8M€ una tantum"
+    provided: true
+    source: "stima engineering H2"
+    provenance: sourced
+  cost.buy:
+    label: "Costo buy (vendor X)"
+    value: "1.2M€/anno"
+    provided: true
+    source: "offerta vendor X"
+    provenance: sourced
+
+content:
+  context_framing:
+    title: "Contesto"
+    body: "Sessione di pre-work per la decisione build-vs-buy della piattaforma H2."
+  use_case_matrix:
+    title: "Matrice use-case (freq × criticità × dati)"
+    rows:
+      - { metric_binding: usecase.kyc }
+      - { metric_binding: usecase.reporting }
+      - { metric_binding: usecase.export }
+  moscow_requirements:
+    title: "Requisiti (MoSCoW)"
+    rows:
+      - { metric_binding: req.sso }
+      - { metric_binding: req.api }
+      - { metric_binding: req.residency }
+      - { metric_binding: req.sla }
+  architectural_constraints:
+    title: "Vincoli architetturali"
+    body: "Deploy: {{arch.deploy}}. Integrazioni obbligatorie: {{arch.integration}}. Latenza target: {{arch.latency}}."
+  options:
+    title: "Opzioni e trade-off"
+    options:
+      - { name: "Build in-house", pro: "Controllo pieno, IP interna", con: "{{cost.build}}" }
+      - { name: "Buy (vendor X)", pro: "Operativo subito, {{cost.buy}}", con: "Lock-in vendor" }
+      - { name: "Nessuna azione (status quo)", pro: "Nessun costo immediato", con: "Volumi H2 non sostenuti", no_action: true }
+  recommendation:
+    title: "Raccomandazione preliminare"
+    body: "Orientamento: buy, da validare con scorecard pesata dopo la raccolta requisiti."
+  risks_and_mitigations:
+    title: "Rischi e mitigazioni"
+    risks:
+      - { risk: "Lock-in sul vendor", ask: "Clausola di exit + escrow del codice" }
+      - { risk: "Compliance SOX sull'integrazione dati", ask: "Audit di sicurezza pre-go-live" }
+  decision_ask:
+    title: "Decisione richiesta"
+    decisions:
+      - "Approvare la shortlist e avviare l'RFP."
+  decision_contract:
+    title: "Contratto di decisione"
+    next_step: "RFP con i requisiti Must/Should come criteri di sbarramento"
+    residual_risks:
+      - "SLA non garantito finché non confermato in offerta ({{req.sla}})"
