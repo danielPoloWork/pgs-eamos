@@ -1,0 +1,14 @@
+# Function pack: pre-work (RFC-0001 §3, axis 3). Schema: _schema.md.
+# The decision pre-work pack (#26): the reusable working-session sections for an enterprise
+# build-vs-buy / vendor decision — use-case matrix, MoSCoW requirements, architectural constraints —
+# composed onto the `decision` archetype the same way finance/engineering compose (don't author a
+# bespoke profile, RFC-0001 §13). The matrix/requirements are data-IR tables (kpi_table); the
+# constraints are prose. All grounded from the manifest ledger; the *capture* side is #29's
+# discovery_intake, which feeds these. Decision-oriented (anchored after context_framing).
+function: pre-work
+display_name: Decision pre-work
+terminology: { focus: "use-cases, requirements (MoSCoW), architectural constraints" }
+add_sections:
+  - { id: use_case_matrix,           kind: kpi_table, required: true,  after: context_framing }
+  - { id: moscow_requirements,       kind: kpi_table, required: true,  after: use_case_matrix }
+  - { id: architectural_constraints, kind: prose,     required: false, after: moscow_requirements }

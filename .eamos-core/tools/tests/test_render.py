@@ -15,7 +15,7 @@ import yamlmini  # noqa: E402
 import render    # noqa: E402
 
 REFS = ["qbr-c-level", "esc-decision", "qbr-finance", "rca-eng", "board-confidential",
-        "planning-release", "retro-sprint", "discovery-product", "one-on-one"]
+        "planning-release", "retro-sprint", "discovery-product", "one-on-one", "vendor-prework"]
 
 
 def load(name):
@@ -84,6 +84,16 @@ class TestDecisionContract(unittest.TestCase):
         md = emit_md.render_md(deck)
         self.assertIn("Prossimo passo", md)                        # next_step label (output_lang it)
         self.assertIn("Rischio residuo", md)                       # residual_risk label
+
+
+class TestPreWorkPack(unittest.TestCase):
+    def test_pack_composes_onto_decision(self):
+        m, arch = load("vendor-prework")                  # decision archetype, function: pre-work
+        deck, _ = render.build_deck_ir(m, arch)
+        ids = [s["id"] for s in deck["slides"]]
+        for sid in ("use_case_matrix", "moscow_requirements", "architectural_constraints"):
+            self.assertIn(sid, ids)                        # the pack's three sections compose in
+        self.assertLess(ids.index("use_case_matrix"), ids.index("options"))   # pre-work precedes options
 
 
 class TestDiscoveryIntake(unittest.TestCase):
