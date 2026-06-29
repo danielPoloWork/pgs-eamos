@@ -1,0 +1,22 @@
+{
+  "records": [
+    {
+      "series_id": "crm-replacement-2025",
+      "instance": "DECISION",
+      "date": "2025-11",
+      "classification": { "cluster": "system_replacement", "complexity": "high", "decision_risk": "high" },
+      "recommendation": "Buy: sostituito il CRM legacy con una soluzione SaaS, time-to-value immediato.",
+      "next_step": "PoC di 60 giorni prima del commit",
+      "residual_risks": ["Lock-in sul fornitore", "Migrazione dati storici"]
+    },
+    {
+      "series_id": "data-platform-2025",
+      "instance": "DECISION",
+      "date": "2025-09",
+      "classification": { "cluster": "data_platform", "complexity": "high", "decision_risk": "med" },
+      "recommendation": "Build: data platform interna per il controllo sui dati regolamentari.",
+      "next_step": "Pilot su un dominio dati",
+      "residual_risks": ["Costo di manutenzione a lungo termine"]
+    }
+  ]
+}

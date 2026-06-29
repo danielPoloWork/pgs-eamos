@@ -19,6 +19,7 @@ import render      # noqa: E402
 import series      # noqa: E402
 import intake      # noqa: E402
 import facilitate  # noqa: E402
+import advisor     # noqa: E402
 
 try:
     import pptx  # noqa: F401
@@ -80,6 +81,33 @@ class TestVendorSelectionSeries(unittest.TestCase):
             self.assertTrue(_json(digest)["prior_decisions"])
             self.assertEqual(quiet(series.close, dec, store), 0)          # risk_list carries by kind too (decision)
             self.assertTrue(any("exit" in a["action"].lower() for a in _json(store)["open_actions"]))
+
+
+class TestAdvisor(unittest.TestCase):
+    REPO = os.path.join(EX, "advisor", "decision-repository.json")
+    VSEL = os.path.join(EX, "vendor-selection.yaml")
+
+    def test_match_ranks_by_similarity(self):
+        hits = quiet(advisor.match, self.VSEL, self.REPO)
+        self.assertTrue(hits)
+        top_score, top_rec = hits[0]
+        self.assertEqual(top_score, 5)                                # same cluster + complexity + decision_risk
+        self.assertEqual(top_rec["series_id"], "crm-replacement-2025")
+        self.assertIn("Buy", top_rec["recommendation"])
+        self.assertGreater(hits[0][0], hits[-1][0])                   # ranked by similarity (5 > 1)
+
+    def test_simulate_flips_winner(self):
+        res = quiet(advisor.simulate, self.VSEL, ["w.tco=0.3", "w.ttv=0.2", "w.integ=0.5"])
+        self.assertEqual(res["baseline_winner"], "Buy (vendor X)")
+        self.assertEqual(res["simulated_winner"], "Build in-house")   # the re-weighting flips the winner
+
+    def test_record_round_trip(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = os.path.join(d, "repo.json")
+            rec = quiet(advisor.record, self.VSEL, repo)
+            self.assertEqual(rec["classification"]["cluster"], "system_replacement")
+            self.assertIn("buy", rec["recommendation"].lower())
+            self.assertEqual(len(_json(repo)["records"]), 1)
 
 
 class TestIntake(unittest.TestCase):

@@ -45,11 +45,11 @@ inputs:
   w.tco:   { label: "Peso — TCO", value: "0.4", provided: true, source: "criteri di selezione concordati", provenance: sourced }
   w.ttv:   { label: "Peso — Time-to-value", value: "0.35", provided: true, source: "criteri di selezione concordati", provenance: sourced }
   w.integ: { label: "Peso — Integrazione/compliance", value: "0.25", provided: true, source: "criteri di selezione concordati", provenance: sourced }
-  sc.build.tco:   { label: "Build × TCO", value: "2", provided: true, source: "Finance — TCO model", provenance: sourced }
-  sc.build.ttv:   { label: "Build × Time-to-value", value: "2", provided: true, source: "piano capacity SAFe", provenance: sourced }
-  sc.build.integ: { label: "Build × Integrazione", value: "4", provided: true, source: "stima architettura", provenance: sourced }
+  sc.build.tco:   { label: "Build × TCO", value: "3", provided: true, source: "Finance — TCO model", provenance: sourced }
+  sc.build.ttv:   { label: "Build × Time-to-value", value: "3", provided: true, source: "piano capacity SAFe", provenance: sourced }
+  sc.build.integ: { label: "Build × Integrazione", value: "5", provided: true, source: "stima architettura", provenance: sourced }
   sc.buy.tco:     { label: "Buy × TCO", value: "4", provided: true, source: "offerta vendor X", provenance: sourced }
-  sc.buy.ttv:     { label: "Buy × Time-to-value", value: "5", provided: true, source: "offerta vendor X", provenance: sourced }
+  sc.buy.ttv:     { label: "Buy × Time-to-value", value: "4", provided: true, source: "offerta vendor X", provenance: sourced }
   sc.buy.integ:   { label: "Buy × Integrazione", value: "3", provided: true, source: "stima architettura", provenance: sourced }
   # Systems for the target-architecture diagram (#22). Vendor X is assumed until contract.
   sys.platform: { label: "Piattaforma H2", value: "Nuova piattaforma H2", provided: true, source: "target architecture", provenance: sourced }
