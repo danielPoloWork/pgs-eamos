@@ -173,7 +173,7 @@ def main():
         manifest = yamlmini.load_yaml(fh.read())
     archetype = render.load_archetype(manifest.get("identity", {}).get("archetype", "review"))
     deck_ir, acc = render.build_deck_ir(manifest, archetype)
-    ledger = manifest.get("inputs", {}) or {}
+    ledger = render.scorecard_ledger(manifest)   # include computed scorecard totals (#23) for grounding
 
     gate_completeness(deck_ir, archetype)
     gate_grounding_labeled(deck_ir, acc, ledger)

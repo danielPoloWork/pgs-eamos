@@ -12,3 +12,5 @@ add_sections:
   - { id: use_case_matrix,           kind: kpi_table, required: true,  after: context_framing }
   - { id: moscow_requirements,       kind: kpi_table, required: true,  after: use_case_matrix }
   - { id: architectural_constraints, kind: prose,     required: false, after: moscow_requirements }
+  # The weighted-scorecard totals (#23) as a formula-free table — each row binds a computed total cell.
+  - { id: weighted_scorecard,        kind: kpi_table, required: false, after: architectural_constraints }

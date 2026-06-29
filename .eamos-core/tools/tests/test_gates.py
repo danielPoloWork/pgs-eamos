@@ -26,7 +26,7 @@ def load(name):
 def run_gates(m):
     arch = render.load_archetype(m["identity"]["archetype"])
     deck, acc = render.build_deck_ir(m, arch)
-    ledger = m.get("inputs", {}) or {}
+    ledger = render.scorecard_ledger(m)   # include computed scorecard totals (#23)
     eamos_lint.failures.clear()
     eamos_lint.gate_completeness(deck, arch)
     eamos_lint.gate_grounding_labeled(deck, acc, ledger)

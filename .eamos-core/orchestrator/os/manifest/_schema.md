@@ -73,6 +73,18 @@ inputs:
     fill_from:       <str>          # where to get the real value (assumed)
     review_required: <true>         # required when assumed
 
+# Optional weighted scorecard (#23). Criteria × weights × per-option scores → a computed weighted
+# total per option. `render.py` computes each total deterministically and injects it as a *computed*
+# ledger cell (`computed: true`, source "computed from criteria × weights"); the sheet stays
+# formula-free. Provenance propagates: the total is `sourced` iff every weight+score is sourced, else
+# `assumed` (labeled + into the review appendix). `weight` and each `scores.<criterion-id>` are
+# ledger keys; `total` is the ledger key the computed total is written to (bind it with {{total-key}}).
+scorecard:
+  criteria:
+    - { id: <criterion-id>, label: <str>, weight: <ledger-key> }
+  options:
+    - { name: <str>, total: <ledger-key>, scores: { <criterion-id>: <ledger-key>, ... } }
+
 # Content authored once, per section (keys match the archetype's structure ids). Prose is in
 # output_lang and binds the ledger via {{key}}; the shape per section follows the section's kind
 # (see archetypes/_schema.md → block kinds).
