@@ -25,7 +25,7 @@ slides:
       - { type: prose,    text: <str> }
       - { type: risk,     risk: <str>, ask: <str> }
       - { type: decision, text: <str> }
-      - { type: option,   name: <str>, pro: <str>, con: <str> }
+      - { type: option,   name: <str>, pro: <str>, con: <str>, no_action: <bool?> }  # no-action baseline (#30)
       - { type: next_step,     text: <str> }   # decision_contract (Phase G): the chosen next step
       - { type: residual_risk, text: <str> }   # decision_contract: risk remaining after mitigation
 review_appendix:                                   # the "verify before the room" list (RFC-0001 §6)

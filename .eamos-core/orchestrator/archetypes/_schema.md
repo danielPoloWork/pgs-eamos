@@ -34,6 +34,11 @@ deliverable_bounds:
     <deliverable-type>: { <param>: { allow: [<value>, ...] } }
 
 gates: [<gate-id>, ...]      # the gates this archetype asserts (RFC-0001 §10)
+
+# Optional, advisory (Phase E, #30): the prescribed canonical menu for a solution space. Only the
+# no-action option is gate-enforced (the no-action-considered gate, which fires on any `option_list`
+# section); the rest are a recommended menu. Mark the baseline with `no_action: true` on the option.
+canonical_options: [<option-slug>, ..., no-action]
 ```
 
 ## Block kinds (the renderer's vocabulary)
@@ -45,7 +50,7 @@ gates: [<gate-id>, ...]      # the gates this archetype asserts (RFC-0001 §10)
 | `prose` | `body` | `prose` |
 | `risk_list` | `risks: [{risk, ask}]` | `risk` |
 | `decision_list` | `decisions: [..]` | `decision` |
-| `option_list` | `options: [{name, pro, con}]` | `option` |
+| `option_list` | `options: [{name, pro, con, no_action?}]` | `option` |
 | `decision_contract` | `next_step`, `residual_risks: [..]` | `next_step`, `residual_risk` |
 
 ## Authoring guidance

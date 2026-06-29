@@ -31,4 +31,9 @@ deliverable_bounds:
   c-level:
     presentation: { length: { allow: [short, medium] } }
 
-gates: [completeness, grounding-labeled, audience-fit]
+# Phase E (#30): the prescribed canonical menu for a solution space. Advisory — only `no-action` is
+# gate-enforced (the no-action-considered gate); the rest are a recommended menu, not a requirement.
+# Mark the no-action option in the manifest with `no_action: true` on the option.
+canonical_options: [buy-standard, custom-build, hybrid, extend-existing, no-action]
+
+gates: [completeness, grounding-labeled, audience-fit, no-action-considered]

@@ -68,6 +68,7 @@ content:
       - { name: "Build in-house", pro: "Controllo pieno, IP interna", con: "{{cost.build}}, time-to-value {{time.build}}" }
       - { name: "Buy (vendor X)", pro: "Operativo subito, {{cost.buy}}", con: "Lock-in vendor, ROI {{roi.buy}}" }
       - { name: "Partnership", pro: "Rischio condiviso", con: "Governance complessa, marginalità incerta" }
+      - { name: "Nessuna azione (status quo)", pro: "Nessun costo né rischio immediato", con: "La piattaforma resta sotto-dimensionata per i volumi H2", no_action: true }
   recommendation:
     title: "Raccomandazione"
     body: "Raccomandazione: buy da vendor X. Time-to-value immediato a {{cost.buy}}; il build a {{cost.build}} non rientra nella finestra H2."
