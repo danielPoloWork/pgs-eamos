@@ -114,6 +114,25 @@ class TestFacilitate(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertNotIn("RACI:", buf.getvalue())  # absent roster → nothing rendered
 
+    def test_prep_discovery_decision_template(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = facilitate.prep(ESC, 75, template="discovery-decision")
+        self.assertEqual(rc, 0)
+        out = buf.getvalue()
+        for phase in ("Raccolta input", "Classificazione dal vivo", "Domande mirate",
+                      "Sintesi strutturata", "Inquadramento decisione"):
+            self.assertIn(phase, out)              # the five flow phases (output_lang it)
+        self.assertIn("Partecipanti", out)         # the roster header still leads (#25)
+
+    def test_template_boxes_clamp_to_range(self):
+        t = facilitate.TIMEBOX_TEMPLATES["discovery-decision"]
+        self.assertEqual(sum(facilitate._template_boxes(t, 75)), 75)
+        self.assertEqual(sum(facilitate._template_boxes(t, 60)), 60)    # min total (10/5/20/10/15)
+        self.assertEqual(sum(facilitate._template_boxes(t, 80)), 80)    # max total (targeted at 40)
+        self.assertEqual(sum(facilitate._template_boxes(t, 120)), 80)   # caps at 80
+        self.assertEqual(sum(facilitate._template_boxes(t, 30)), 60)    # floors at 60
+
 
 class TestRedaction(unittest.TestCase):
     def test_pii_cell_masked_and_no_leak(self):

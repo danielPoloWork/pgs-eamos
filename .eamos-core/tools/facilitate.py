@@ -5,7 +5,8 @@ Dependency-free (stdlib + yamlmini + render + series). Two ops around the non-de
 `human-runs-the-room` gate (RFC-0001 §8):
 
   prep      — the timeboxed agenda + facilitation script (talking points per item), grounded from
-              the deck-IR. The agent prepares; the human runs the room.
+              the deck-IR. The agent prepares; the human runs the room. `--template` swaps the
+              generic per-section agenda for a named meeting-flow (e.g. discovery-decision, #32).
   followup  — minutes + decision log + action items (owner+due) from the human-captured OUTCOMES,
               then carries them into the series store (the loop closes; the next instance inherits).
 
@@ -31,11 +32,17 @@ LABELS = {
     "it": {"agenda": "Agenda", "script": "Script di facilitazione", "min": "min", "obj": "Obiettivo",
            "talk": "Punti da toccare", "minutes": "Verbale", "decisions": "Decisioni",
            "actions": "Azioni", "owner": "owner", "due": "scadenza", "notes": "Note",
-           "attendees": "Partecipanti", "joins_at": "entra da"},
+           "attendees": "Partecipanti", "joins_at": "entra da",
+           "input_gathering": "Raccolta input", "live_classification": "Classificazione dal vivo",
+           "targeted_questions": "Domande mirate", "structured_synthesis": "Sintesi strutturata",
+           "decision_framing": "Inquadramento decisione"},
     "en": {"agenda": "Agenda", "script": "Facilitation script", "min": "min", "obj": "Objective",
            "talk": "Talking points", "minutes": "Minutes", "decisions": "Decisions",
            "actions": "Action items", "owner": "owner", "due": "due", "notes": "Notes",
-           "attendees": "Attendees", "joins_at": "joins at"},
+           "attendees": "Attendees", "joins_at": "joins at",
+           "input_gathering": "Input gathering", "live_classification": "Live classification",
+           "targeted_questions": "Targeted questions", "structured_synthesis": "Structured synthesis",
+           "decision_framing": "Decision framing"},
 }
 
 
@@ -69,6 +76,34 @@ def _timeboxes(n, total):
     return boxes
 
 
+# Named timebox templates: the meeting FLOW as data — (phase id, min, max minutes). The flexible
+# phase(s) (min != max) absorb the slack so the total tracks --minutes within the template's range.
+TIMEBOX_TEMPLATES = {
+    # Discovery -> decision flow (#32): the 10/5/20-40/10/15 phases (60–80 min total — the fixed 40
+    # plus the flexible targeted-questions 20–40); targeted-questions absorbs the --minutes slack.
+    "discovery-decision": [
+        ("input_gathering",      10, 10),
+        ("live_classification",   5,  5),
+        ("targeted_questions",   20, 40),
+        ("structured_synthesis", 10, 10),
+        ("decision_framing",     15, 15),
+    ],
+}
+
+
+def _template_boxes(template, minutes):
+    """Minutes per phase: each starts at its minimum; the flexible phases (min != max) absorb the
+    remaining budget up to their max, so the total self-clamps to the template's range."""
+    boxes = [lo for _, lo, _ in template]
+    extra = minutes - sum(boxes)
+    for i, (_, lo, hi) in enumerate(template):
+        if hi > lo and extra > 0:
+            add = min(extra, hi - lo)
+            boxes[i] += add
+            extra -= add
+    return boxes
+
+
 def _roster(attendees, lang):
     """The optional attendee roster / RACI (manifest `attendees:`), rendered into the agenda header.
     Structural and non-fabricating: an absent or empty roster renders nothing. `raci` and `from_phase`
@@ -88,7 +123,7 @@ def _roster(attendees, lang):
     return out
 
 
-def prep(manifest_path, minutes):
+def prep(manifest_path, minutes, template=None):
     m = _load(manifest_path)
     archetype = render.load_archetype(m.get("identity", {}).get("archetype", "review"))
     deck_ir, _ = render.build_deck_ir(m, archetype)
@@ -98,13 +133,19 @@ def prep(manifest_path, minutes):
 
     out = [f"# {_lab(lang, 'agenda')} — {m.get('objective', '')}", ""]
     out += _roster(m.get("attendees"), lang)   # optional roster / RACI in the agenda header (#25)
+    tmpl = TIMEBOX_TEMPLATES.get(template)     # a named meeting-flow template, e.g. discovery-decision (#32)
     clock = 0
-    for s, box in zip(slides, boxes):
-        out.append(f"- {clock:>3}–{clock + box:<3} {_lab(lang, 'min')}  ·  {s.get('title', s.get('id'))}")
-        clock += box
+    if tmpl:                                   # phase-based agenda (the flow); the script stays per-section
+        for (pid, _, _), box in zip(tmpl, _template_boxes(tmpl, minutes)):
+            out.append(f"- {clock:>3}–{clock + box:<3} {_lab(lang, 'min')}  ·  {_lab(lang, pid)}")
+            clock += box
+    else:                                      # generic agenda: one timebox per deck section
+        for s, box in zip(slides, boxes):
+            out.append(f"- {clock:>3}–{clock + box:<3} {_lab(lang, 'min')}  ·  {s.get('title', s.get('id'))}")
+            clock += box
     out += ["", f"# {_lab(lang, 'script')}", ""]
     for s, box in zip(slides, boxes):
-        out.append(f"## {s.get('title', s.get('id'))}  ({box} {_lab(lang, 'min')})")
+        out.append(f"## {s.get('title', s.get('id'))}" + ("" if tmpl else f"  ({box} {_lab(lang, 'min')})"))
         out.append(f"*{_lab(lang, 'talk')}:*")
         for b in s.get("blocks", []):
             line = _flatten(b)
@@ -177,12 +218,14 @@ def main():
     ap.add_argument("op", choices=["prep", "followup"])
     ap.add_argument("manifest")
     ap.add_argument("--minutes", type=int, default=60, help="(prep) total meeting length")
+    ap.add_argument("--template", choices=sorted(TIMEBOX_TEMPLATES),
+                    help="(prep) timebox template, e.g. discovery-decision (default: per-section)")
     ap.add_argument("--outcomes", help="(followup) human-captured outcomes YAML (required)")
     ap.add_argument("--store", help="(followup) series store JSON to carry outcomes into")
     ap.add_argument("--out", help="(followup) path to write the minutes")
     args = ap.parse_args()
     if args.op == "prep":
-        return prep(args.manifest, args.minutes)
+        return prep(args.manifest, args.minutes, args.template)
     return followup(args.manifest, args.outcomes, args.store, args.out)
 
 
