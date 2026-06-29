@@ -1,0 +1,108 @@
+# vendor-selection.yaml — the vendor-selection recipe, BUNDLE model (RFC-0005, #24): one decision
+# meeting @ vp composing the computed scorecard (#23), the no-action baseline (#30), the decision
+# contract (#31), and the target-architecture topology (#22) over a full inputs ledger (criteria,
+# weights, TCO, integration effort). The richer sibling of esc-decision; renders gate-green.
+schema_version: 1
+
+identity:
+  series_name: "Selezione piattaforma H2 — Decisione"
+  archetype: decision
+  audience_altitude: vp
+
+context:
+  company_size: enterprise
+  industry: fintech
+  regulatory: [SOX]
+  framework: SAFe
+  formality: high
+  output_lang: it
+
+objective: "Selezionare la piattaforma H2 (build vs buy) e approvare il prossimo passo."
+
+discovery_intake:
+  intent: "Sostenere i volumi H2 con una piattaforma che scala (capability, non il tool)"
+  domain:
+    stakeholders: ["Business owner", "IT / Architettura", "Sicurezza / Compliance", "Finance"]
+    existing_systems: ["Piattaforma attuale", "ERP", "SSO / AD"]
+    current_pain: "La piattaforma attuale non regge i volumi H2"
+  constraints:
+    volume: "Picco volumi H2 oltre la capacità attuale"
+    budget_range: "1–2M€"
+    timing: "Go-live entro H2-2026"
+    dependencies: ["Conformità SOX", "Integrazione dati con ERP"]
+  classification: { cluster: system_replacement, complexity: high, decision_risk: high }
+
+deliverables:
+  - { type: presentation, format: speaker, length: medium }
+  - { type: architecture, layout: layered }
+
+inputs:
+  cost.build: { label: "TCO build (3 anni)", value: "2.4M€", provided: true, source: "Finance — TCO model", provenance: sourced }
+  cost.buy:   { label: "TCO buy (3 anni)", value: "1.9M€", provided: true, source: "Finance — TCO model (offerta vendor X)", provenance: sourced }
+  integ.build: { label: "Effort integrazione build", value: "8 mesi-uomo", provided: true, source: "stima architettura", provenance: sourced }
+  integ.buy:   { label: "Effort integrazione buy", value: "3 mesi-uomo", provided: true, source: "stima architettura", provenance: sourced }
+  # Scorecard: pesi (somma 1.0) + punteggi 1–5 per opzione (#23).
+  w.tco:   { label: "Peso — TCO", value: "0.4", provided: true, source: "criteri di selezione concordati", provenance: sourced }
+  w.ttv:   { label: "Peso — Time-to-value", value: "0.35", provided: true, source: "criteri di selezione concordati", provenance: sourced }
+  w.integ: { label: "Peso — Integrazione/compliance", value: "0.25", provided: true, source: "criteri di selezione concordati", provenance: sourced }
+  sc.build.tco:   { label: "Build × TCO", value: "2", provided: true, source: "Finance — TCO model", provenance: sourced }
+  sc.build.ttv:   { label: "Build × Time-to-value", value: "2", provided: true, source: "piano capacity SAFe", provenance: sourced }
+  sc.build.integ: { label: "Build × Integrazione", value: "4", provided: true, source: "stima architettura", provenance: sourced }
+  sc.buy.tco:     { label: "Buy × TCO", value: "4", provided: true, source: "offerta vendor X", provenance: sourced }
+  sc.buy.ttv:     { label: "Buy × Time-to-value", value: "5", provided: true, source: "offerta vendor X", provenance: sourced }
+  sc.buy.integ:   { label: "Buy × Integrazione", value: "3", provided: true, source: "stima architettura", provenance: sourced }
+  # Systems for the target-architecture diagram (#22). Vendor X is assumed until contract.
+  sys.platform: { label: "Piattaforma H2", value: "Nuova piattaforma H2", provided: true, source: "target architecture", provenance: sourced }
+  sys.erp: { label: "ERP", value: "ERP aziendale", provided: true, source: "mappa sistemi", provenance: sourced }
+  sys.sso: { label: "SSO/AD", value: "SSO / AD", provided: true, source: "mappa sistemi", provenance: sourced }
+  sys.vendorx: { label: "Vendor X", value: "Vendor X (SaaS)", provided: false, provenance: assumed, assumption: "sistema vendor proposto, da confermare in contratto", fill_from: "contratto vendor X", review_required: true }
+
+scorecard:
+  criteria:
+    - { id: tco,   label: "TCO", weight: w.tco }
+    - { id: ttv,   label: "Time-to-value", weight: w.ttv }
+    - { id: integ, label: "Integrazione/compliance", weight: w.integ }
+  options:
+    - { name: "Build in-house", total: total.build, scores: { tco: sc.build.tco, ttv: sc.build.ttv, integ: sc.build.integ } }
+    - { name: "Buy (vendor X)", total: total.buy, scores: { tco: sc.buy.tco, ttv: sc.buy.ttv, integ: sc.buy.integ } }
+
+topology:
+  nodes:
+    - { id: platform, label: sys.platform, kind: app }
+    - { id: erp,      label: sys.erp,      kind: erp }
+    - { id: sso,      label: sys.sso,      kind: sso }
+    - { id: vendorx,  label: sys.vendorx,  kind: external }
+  edges:
+    - { from: platform, to: erp,     pattern: rest }
+    - { from: platform, to: sso,     pattern: rest }
+    - { from: platform, to: vendorx, pattern: event }
+
+content:
+  context_framing:
+    title: "Contesto"
+    body: "Decisione build-vs-buy per la piattaforma H2: TCO {{cost.build}} (build) vs {{cost.buy}} (buy) su 3 anni."
+  options:
+    title: "Opzioni e trade-off"
+    options:
+      - { name: "Build in-house", pro: "Controllo pieno, IP interna — score {{total.build}}", con: "TCO {{cost.build}}, integrazione {{integ.build}}" }
+      - { name: "Buy (vendor X)", pro: "Operativo subito — score {{total.buy}}", con: "TCO {{cost.buy}}, lock-in vendor" }
+      - { name: "Nessuna azione (status quo)", pro: "Nessun costo immediato", con: "Volumi H2 non sostenuti", no_action: true }
+  recommendation:
+    title: "Raccomandazione"
+    body: "Raccomandazione: buy da vendor X (scorecard {{total.buy}} vs build {{total.build}}; TCO {{cost.buy}} su 3 anni, integrazione {{integ.buy}})."
+  risks_and_mitigations:
+    title: "Rischi e mitigazioni"
+    risks:
+      - { risk: "Lock-in sul vendor X", ask: "Clausola di exit + escrow del codice nel contratto" }
+      - { risk: "Compliance SOX sull'integrazione dati", ask: "Audit di sicurezza pre-go-live" }
+  decision_ask:
+    title: "Decisione richiesta"
+    decisions:
+      - "Approvare l'opzione buy (vendor X) a {{cost.buy}} su 3 anni."
+      - "Sbloccare il budget e mandato a negoziare la clausola di exit."
+  decision_contract:
+    title: "Contratto di decisione"
+    next_step: "PoC di 60 giorni con vendor X, gate go/no-go prima del commit pluriennale"
+    residual_risks:
+      - "Dipendenza operativa dal vendor X residua anche con la clausola di exit"
+      - "SLA da confermare nel contratto"

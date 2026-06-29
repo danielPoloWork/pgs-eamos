@@ -80,18 +80,30 @@ def close(manifest_path, store_path):
     if instance not in store["instances"]:
         store["instances"].append(instance)
 
-    for d in (content.get("decisions_required", {}) or {}).get("decisions", []) or []:
-        store["decision_log"].append({"instance": instance, "decision": _resolved(d, ledger, lang)})
+    # Carry by section KIND (RFC-0005, #24), so the moat spans archetypes (not just review): every
+    # decision_list section -> the decision log (the shortlist / asks); every risk_list -> open
+    # actions + rolling risks. Backward-compatible — review's decisions_required IS a decision_list
+    # and its risks_and_asks IS a risk_list, so an existing series carries identically.
+    structure = render.load_archetype(ident.get("archetype", "review")).get("structure", []) or []
+    for sec in structure:
+        if sec.get("kind") != "decision_list":
+            continue
+        for d in (content.get(sec["id"], {}) or {}).get("decisions", []) or []:
+            store["decision_log"].append({"instance": instance, "decision": _resolved(d, ledger, lang)})
 
-    risks = (content.get("risks_and_asks", {}) or {}).get("risks", []) or []
-    for i, r in enumerate(risks, 1):
-        store["open_actions"].append({
-            "id": f"{instance}-A{i}", "from": instance, "status": "open",
-            "action": _resolved(r.get("ask", ""), ledger, lang),
-            "context": _resolved(r.get("risk", ""), ledger, lang)})
-        rtext = _resolved(r.get("risk", ""), ledger, lang)
-        if not any(x["risk"] == rtext for x in store["rolling_risks"]):
-            store["rolling_risks"].append({"risk": rtext, "since": instance, "status": "open"})
+    ai = 0
+    for sec in structure:
+        if sec.get("kind") != "risk_list":
+            continue
+        for r in (content.get(sec["id"], {}) or {}).get("risks", []) or []:
+            ai += 1
+            store["open_actions"].append({
+                "id": f"{instance}-A{ai}", "from": instance, "status": "open",
+                "action": _resolved(r.get("ask", ""), ledger, lang),
+                "context": _resolved(r.get("risk", ""), ledger, lang)})
+            rtext = _resolved(r.get("risk", ""), ledger, lang)
+            if not any(x["risk"] == rtext for x in store["rolling_risks"]):
+                store["rolling_risks"].append({"risk": rtext, "since": instance, "status": "open"})
 
     for key, cell in ledger.items():
         if key.startswith("kpi.") and isinstance(cell, dict):

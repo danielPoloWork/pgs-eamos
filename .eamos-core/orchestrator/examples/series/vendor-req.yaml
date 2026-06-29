@@ -1,0 +1,58 @@
+# vendor-req.yaml — vendor-selection SERIES, instance 1: requirements (discovery). RFC-0005, #24.
+# The shortlist (hypotheses, a decision_list) is gathered here; closing this instance carries it
+# forward (series.close by kind) to the decision instance — the moat across archetypes (§9).
+schema_version: 1
+
+identity:
+  series_id: vendor-platform-2026
+  instance: REQ
+  series_name: "Selezione piattaforma — Requisiti"
+  archetype: discovery
+  audience_altitude: manager
+
+context:
+  company_size: enterprise
+  industry: fintech
+  regulatory: [SOX]
+  formality: medium
+  output_lang: it
+
+objective: "Raccogliere i requisiti e definire la shortlist per la selezione della piattaforma H2."
+
+discovery_intake:
+  intent: "Sostenere i volumi H2 con una piattaforma che scala (capability, non il tool)"
+  domain:
+    stakeholders: ["Business owner", "IT / Architettura", "Finance"]
+    existing_systems: ["Piattaforma attuale", "ERP", "SSO / AD"]
+    current_pain: "La piattaforma attuale non regge i volumi H2"
+  constraints:
+    volume: "Picco volumi H2 oltre la capacità attuale"
+    budget_range: "1–2M€"
+    timing: "Go-live entro H2-2026"
+    dependencies: ["Conformità SOX"]
+  classification: { cluster: system_replacement, complexity: high, decision_risk: high }
+
+deliverables:
+  - { type: presentation, format: detailed, length: medium }
+
+inputs:
+  kpi.volumi: { label: "Volumi H2 attesi", value: "+45% vs H1", provided: true, source: "forecast capacity", provenance: sourced }
+
+content:
+  problem_statement:
+    title: "Problema"
+    lead: "La piattaforma attuale non regge i volumi H2 attesi ({{kpi.volumi}})."
+    points:
+      - "Rischio di degrado del servizio nel picco H2."
+  assumptions:
+    title: "Assunzioni"
+    body: "Assumiamo che una soluzione buy sia praticabile entro la finestra H2."
+  hypotheses:
+    title: "Shortlist da valutare"
+    decisions:
+      - "Valutare Vendor X (SaaS)."
+      - "Valutare Vendor Y (on-prem)."
+      - "Mantenere il build in-house come baseline."
+  open_questions:
+    title: "Domande aperte"
+    body: "Quali requisiti Must sono non negoziabili? Qual è il budget massimo approvato?"
