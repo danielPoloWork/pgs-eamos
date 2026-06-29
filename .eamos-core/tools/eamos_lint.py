@@ -14,6 +14,7 @@ Gates:
   audience-fit               — the rendered deck respects the altitude slide budget.
   deliverable-params-in-bounds — requested deliverable params are within the archetype's bounds.
   no-action-considered       — any solution space (an option_list) includes the no-action baseline.
+  classification-valid       — a problem-type classification (if present) uses taxonomy-allowed values.
 """
 
 import os
@@ -93,6 +94,23 @@ def gate_no_action_considered(manifest, archetype):
             fail("no-action-considered",
                  f"option_list section '{sec['id']}' has no no-action option "
                  "(flag one option `no_action: true` so the baseline is compared)")
+
+
+def gate_classification_valid(manifest):
+    """Phase-B classification (#27): if a meeting carries `discovery_intake.classification`, its
+    cluster / complexity / decision_risk must be values the taxonomy (os/intake/classification.yaml)
+    allows. Structural + decidable; an absent classification passes (it is optional intake)."""
+    di = manifest.get("discovery_intake") or {}
+    cls = di.get("classification") if isinstance(di, dict) else None
+    if not isinstance(cls, dict):
+        return
+    tax = render.load_classification()
+    for dim in ("cluster", "complexity", "decision_risk"):
+        allowed = tax.get(dim, []) or []
+        val = cls.get(dim)
+        if val is not None and allowed and val not in allowed:
+            fail("classification-valid",
+                 f"discovery_intake.classification.{dim}='{val}' not in {allowed}")
 
 
 def gate_registry_params(manifest):
@@ -180,6 +198,7 @@ def main():
     gate_audience_fit(deck_ir, archetype)
     gate_params_in_bounds(manifest, archetype)
     gate_no_action_considered(manifest, archetype)
+    gate_classification_valid(manifest)
     gate_registry_params(manifest)
     gate_rubric(manifest, deck_ir)
     gate_confidentiality(manifest)   # last: it inspects the other gates' results

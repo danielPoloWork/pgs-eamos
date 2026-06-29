@@ -26,6 +26,7 @@ ARCHETYPES = os.path.join(CORE, "orchestrator", "archetypes")
 DELIVERABLES = os.path.join(CORE, "orchestrator", "os", "deliverables")
 FUNCTIONS = os.path.join(CORE, "orchestrator", "functions")
 POLICY = os.path.join(CORE, "orchestrator", "os", "confidentiality", "policy.yaml")
+CLASSIFICATION = os.path.join(CORE, "orchestrator", "os", "intake", "classification.yaml")
 
 BIND_RE = re.compile(r"\{\{\s*([a-z][a-z0-9_.]*)\s*\}\}")
 # The "verify before the room" label for an assumed value, by output language (RFC-0001 §6).
@@ -208,6 +209,14 @@ def load_policy():
     if not os.path.exists(POLICY):
         return {}
     with open(POLICY, encoding="utf-8") as fh:
+        return yamlmini.load_yaml(fh.read())
+
+
+def load_classification():
+    """The Phase-B problem-type classification taxonomy (#27), or {} if absent."""
+    if not os.path.exists(CLASSIFICATION):
+        return {}
+    with open(CLASSIFICATION, encoding="utf-8") as fh:
         return yamlmini.load_yaml(fh.read())
 
 

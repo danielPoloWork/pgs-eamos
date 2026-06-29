@@ -49,6 +49,10 @@ discovery_intake:
     budget_range: <str>
     timing:       <str>
     dependencies: [<str>, ...]
+  classification:                   # Phase B (#27): what kind of problem — values from os/intake/classification.yaml
+    cluster:       <process_optimization|system_replacement|integration|data_platform|workflow_automation|compliance_regulatory>
+    complexity:    <low|med|high>
+    decision_risk: <low|med|high>   # validated by the classification-valid gate; feeds the routing depth (#28)
 
 # Optional attendee roster / RACI (meeting-conduct metadata, not an IR concept). Rendered into the
 # agenda header by `facilitate.py prep`; absent → renders nothing. `raci` ∈ {R,A,C,I} and
