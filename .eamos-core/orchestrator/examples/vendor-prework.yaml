@@ -33,6 +33,8 @@ discovery_intake:
     budget_range: "1–2M€"
     timing: "Go-live entro H2-2026"
     dependencies: ["Conformità SOX", "Integrazione dati con ERP"]
+  # Phase B (#27): what kind of problem is this — feeds the routing depth (#28).
+  classification: { cluster: system_replacement, complexity: high, decision_risk: high }
 
 deliverables:
   - { type: presentation, format: detailed, length: medium }

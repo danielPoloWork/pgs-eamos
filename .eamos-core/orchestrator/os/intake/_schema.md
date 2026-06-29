@@ -47,3 +47,21 @@ inputs:
     provenance: sourced
     via:        intake/csv | intake/series
 ```
+
+## Classification (Phase B, #27)
+
+A second, distinct intake slice: the **classifier as data**. Before any solution talk, a meeting is
+classified by *problem type* (not by meeting archetype, which axis 1 already covers). The taxonomy —
+the dimensions and their allowed values — lives in [`classification.yaml`](classification.yaml):
+
+| Dimension | Values |
+|-----------|--------|
+| `cluster` | process_optimization · system_replacement · integration · data_platform · workflow_automation · compliance_regulatory |
+| `complexity` | low · med · high |
+| `decision_risk` | low · med · high |
+
+A meeting records its classification in `discovery_intake.classification` (manifest schema). The
+`classification-valid` gate rejects any value outside the taxonomy. The classification is the input
+to **routing depth** (Phase C, #28): e.g. low impact/complexity skips the deep-architecture layer;
+core-business + high integration activates it. English on disk (RFC-0001 §7) — stable ids.
+

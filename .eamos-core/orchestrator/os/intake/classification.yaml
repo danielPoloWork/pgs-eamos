@@ -1,0 +1,8 @@
+# Problem-type classification taxonomy — Phase B (#27). The "classifier as data": the dimensions and
+# their allowed values that decide *what kind of problem this is*, before any solution talk. A
+# meeting captures its classification in `discovery_intake.classification`; the values are validated
+# by the `classification-valid` gate and feed the routing depth (Phase C, #28). English on disk
+# (RFC-0001 §7) — these are stable ids, not localized prose.
+cluster: [process_optimization, system_replacement, integration, data_platform, workflow_automation, compliance_regulatory]
+complexity: [low, med, high]
+decision_risk: [low, med, high]
