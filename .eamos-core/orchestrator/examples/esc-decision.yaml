@@ -19,6 +19,19 @@ context:
 
 objective: "Approvare l'opzione di investimento piattaforma H2 e sbloccare il budget."
 
+# Intake di solution-discovery (L0/L1/L2): perché esiste la richiesta, prima di parlare di soluzioni.
+discovery_intake:
+  intent: "Sostenere i volumi H2 con una piattaforma che scala senza degrado di servizio (capability, non il tool)"
+  domain:
+    stakeholders: ["Business owner", "IT / Architettura", "Sicurezza / Compliance", "Finance"]
+    existing_systems: ["Piattaforma attuale", "ERP", "SSO / AD"]
+    current_pain: "La piattaforma attuale non regge i volumi previsti per H2"
+  constraints:
+    volume: "Picco volumi H2 oltre la capacità attuale"
+    budget_range: "1–2M€ (mix capex/opex da definire)"
+    timing: "Go-live entro H2-2026"
+    dependencies: ["Conformità SOX", "Integrazione dati con ERP"]
+
 # Roster del comitato di steering (RACI). Il vendor entra apposta tardi, solo alla raccomandazione.
 attendees:
   - { role: "Sponsor / Business owner", raci: "A" }

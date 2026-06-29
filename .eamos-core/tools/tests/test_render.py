@@ -86,6 +86,18 @@ class TestDecisionContract(unittest.TestCase):
         self.assertIn("Rischio residuo", md)                       # residual_risk label
 
 
+class TestDiscoveryIntake(unittest.TestCase):
+    def test_l0_l1_l2_typed_capture(self):
+        m, _ = load("esc-decision")
+        di = m["discovery_intake"]
+        self.assertTrue(di["intent"])                                   # L0 — intent present
+        self.assertIsInstance(di["domain"]["stakeholders"], list)       # L1 — domain framing typed
+        self.assertIsInstance(di["domain"]["existing_systems"], list)
+        self.assertTrue(di["domain"]["current_pain"])
+        self.assertIsInstance(di["constraints"]["dependencies"], list)  # L2 — constraints typed
+        self.assertTrue(di["constraints"]["budget_range"])
+
+
 class TestOverlays(unittest.TestCase):
     def test_altitude_reorders(self):
         m, arch = load("qbr-c-level")

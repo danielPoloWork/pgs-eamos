@@ -34,6 +34,22 @@ context:                            # axis 4
 
 objective: <str>                    # localized
 
+# Solution-discovery intake (Phase L0/L1/L2, #29) — the typed capture of *why* a meeting exists,
+# before any solution talk. Optional (absent on meetings that don't need it). CAPTURE only: the
+# rendered architectural-constraints section is the decision pre-work pack (#26), which reads from
+# here. Prose values are localized (output_lang); keys stay English (RFC §7).
+discovery_intake:
+  intent:   <str>                   # L0 — the capability sought (not the tool); why the request exists
+  domain:                           # L1 — domain framing
+    stakeholders:     [<str>, ...]
+    existing_systems: [<str>, ...]
+    current_pain:     <str>
+  constraints:                      # L2 — constraints & signals
+    volume:       <str>             # users / frequency / data volume
+    budget_range: <str>
+    timing:       <str>
+    dependencies: [<str>, ...]
+
 # Optional attendee roster / RACI (meeting-conduct metadata, not an IR concept). Rendered into the
 # agenda header by `facilitate.py prep`; absent → renders nothing. `raci` ∈ {R,A,C,I} and
 # `from_phase` (when an actor joins, e.g. a vendor late on purpose) are each optional. Roles are
