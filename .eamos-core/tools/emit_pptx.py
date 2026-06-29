@@ -23,9 +23,11 @@ MUTED = (0x70, 0x70, 0x70)     # captions
 
 LABELS = {
     "it": {"target": "target", "risk": "Rischio", "ask": "Richiesta", "pro": "pro", "con": "contro",
-           "review": "Da verificare prima della sala", "fill": "fonte"},
+           "review": "Da verificare prima della sala", "fill": "fonte",
+           "next_step": "Prossimo passo", "residual_risk": "Rischio residuo"},
     "en": {"target": "target", "risk": "Risk", "ask": "Ask", "pro": "pro", "con": "con",
-           "review": "Verify before the room", "fill": "source"},
+           "review": "Verify before the room", "fill": "source",
+           "next_step": "Next step", "residual_risk": "Residual risk"},
 }
 
 
@@ -48,6 +50,10 @@ def _line(block, lang):
     if t == "option":
         return f"{block.get('name', '')} — {_lab(lang, 'pro')}: {block.get('pro', '')}; " \
                f"{_lab(lang, 'con')}: {block.get('con', '')}"
+    if t == "next_step":
+        return f"{_lab(lang, 'next_step')}: {block.get('text', '')}"
+    if t == "residual_risk":
+        return f"{_lab(lang, 'residual_risk')}: {block.get('text', '')}"
     return ""
 
 

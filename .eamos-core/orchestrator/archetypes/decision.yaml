@@ -8,23 +8,24 @@ structure:
   - { id: context_framing,        kind: prose,         required: false }  # board drops it (overlay)
   - { id: options,                kind: option_list,   required: true }
   - { id: recommendation,         kind: prose,         required: true }
-  - { id: risks_and_mitigations,  kind: risk_list,     required: true }
-  - { id: decision_ask,           kind: decision_list, required: true }
+  - { id: risks_and_mitigations,  kind: risk_list,         required: true }
+  - { id: decision_ask,           kind: decision_list,     required: true }
+  - { id: decision_contract,      kind: decision_contract, required: true }  # Phase G (#31): residual_risks + next_step
 
 # c-level: lead with the recommendation, drop the context framing (the board already has it).
-# vp: keep the context, recommendation still leads.
+# vp: keep the context, recommendation still leads. The decision contract (Phase G) closes the deck.
 altitude_shaping:
   c-level:
     max_slides: 10
     jargon: none
     lead_with: recommendation
     drop: [context_framing]
-    order: [recommendation, options, risks_and_mitigations, decision_ask]
+    order: [recommendation, options, risks_and_mitigations, decision_ask, decision_contract]
   vp:
     max_slides: 16
     jargon: some
     lead_with: recommendation
-    order: [recommendation, context_framing, options, risks_and_mitigations, decision_ask]
+    order: [recommendation, context_framing, options, risks_and_mitigations, decision_ask, decision_contract]
 
 deliverable_bounds:
   c-level:

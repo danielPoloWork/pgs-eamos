@@ -81,3 +81,9 @@ content:
     decisions:
       - "Approvare l'opzione buy (vendor X) a {{cost.buy}}."
       - "Sbloccare il budget H2 e mandato a negoziare la clausola di exit."
+  decision_contract:
+    title: "Contratto di decisione"
+    next_step: "PoC di 60 giorni con vendor X, con gate go/no-go prima del commit pluriennale"
+    residual_risks:
+      - "Dipendenza operativa dal vendor X residua anche con la clausola di exit in contratto"
+      - "Rischio di audit SOX residuo sull'integrazione dati anche dopo il security review pre-go-live"
