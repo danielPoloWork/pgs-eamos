@@ -34,6 +34,7 @@ def run_gates(m):
     eamos_lint.gate_params_in_bounds(m, arch)
     eamos_lint.gate_no_action_considered(m, arch)
     eamos_lint.gate_classification_valid(m)
+    eamos_lint.gate_questions_valid()
     eamos_lint.gate_registry_params(m)
     eamos_lint.gate_rubric(m, deck)
     eamos_lint.gate_confidentiality(m)
@@ -66,6 +67,16 @@ class TestTeeth(unittest.TestCase):
         m = load("vendor-prework")
         m["discovery_intake"]["classification"]["cluster"] = "teleportation"   # not in the taxonomy
         self.assertIn("classification-valid", run_gates(m))
+
+    def test_question_tree_drift(self):
+        orig = render.load_questions
+        render.load_questions = lambda: {"levels": ["surface"], "clusters": {"teleportation": []}}
+        try:
+            eamos_lint.failures.clear()
+            eamos_lint.gate_questions_valid()                       # tree cluster not in the taxonomy
+            self.assertIn("questions-valid", {g for g, _ in eamos_lint.failures})
+        finally:
+            render.load_questions = orig
 
     def test_no_action_baseline_required(self):
         m = load("esc-decision")

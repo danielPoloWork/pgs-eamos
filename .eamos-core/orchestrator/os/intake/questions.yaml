@@ -1,0 +1,40 @@
+# Adaptive question tree — Phase C (RFC-0003, #28). A branching question tree as DATA, keyed by the
+# problem cluster (#27 taxonomy). Each question carries a depth `level`; the routing table caps the
+# deepest level asked. Progressive disclosure: the selector reveals questions level by level — each
+# answer opens only the next needed level. The agent SELECTS; the human ANSWERS (answers populate
+# discovery_intake, #29); nothing is fabricated (RFC-0001 §6, §8). English on disk (RFC-0001 §7);
+# the `ask` prose is localized in the room (interview_lang), not stored localized.
+levels: [surface, deeper, architecture]
+
+# Asked for every cluster (ties to discovery_intake L0/L1).
+common:
+  - { id: intent,       level: surface, ask: "Which capability is sought (not the tool)?" }
+  - { id: current_pain, level: surface, ask: "Where does it hurt today?" }
+
+clusters:
+  process_optimization:
+    - { id: where_breaks, level: surface,      ask: "Where does the process break?" }
+    - { id: how_manual,   level: deeper,       ask: "How manual is it today?" }
+    - { id: touches,      level: deeper,       ask: "Which systems does it touch?" }
+    - { id: throughput,   level: architecture, ask: "What volume/throughput must it sustain?" }
+  system_replacement:
+    - { id: not_scale,      level: surface,      ask: "What no longer scales?" }
+    - { id: missing,        level: deeper,       ask: "Which features are missing?" }
+    - { id: why_not_extend, level: deeper,       ask: "Why not extend the existing system?" }
+    - { id: integrations,   level: architecture, ask: "Which systems must it keep talking to?" }
+  integration:
+    - { id: which_systems, level: surface,      ask: "Which systems must talk?" }
+    - { id: data_flows,    level: deeper,       ask: "What data flows between them?" }
+    - { id: realtime,      level: architecture, ask: "Real-time or batch?" }
+  data_platform:
+    - { id: sources,    level: surface,      ask: "Which data sources feed it?" }
+    - { id: consumers,  level: deeper,       ask: "Who consumes the data, and how?" }
+    - { id: governance, level: architecture, ask: "What governance / data-residency applies?" }
+  workflow_automation:
+    - { id: trigger,    level: surface,      ask: "What triggers the workflow?" }
+    - { id: steps,      level: deeper,       ask: "Which steps are manual today?" }
+    - { id: exceptions, level: architecture, ask: "How are exceptions and rollbacks handled?" }
+  compliance_regulatory:
+    - { id: regime,     level: surface,      ask: "Which regime / obligation applies?" }
+    - { id: evidence,   level: deeper,       ask: "What evidence / audit trail is required?" }
+    - { id: data_scope, level: architecture, ask: "Which data is in scope (PII / financial)?" }

@@ -78,6 +78,40 @@ class TestIntake(unittest.TestCase):
             self.assertGreaterEqual(prov["overridden"], 1)
 
 
+class TestAdaptiveQuestions(unittest.TestCase):
+    def _data(self):
+        return render.load_questions(), render.load_routing()
+
+    def test_high_complexity_reaches_architecture(self):
+        tree, routing = self._data()
+        cls = {"cluster": "system_replacement", "complexity": "high", "decision_risk": "high"}
+        depth, sel = intake.select_questions(cls, tree, routing)
+        self.assertEqual(depth, "architecture")
+        ids = [q["id"] for q in sel]
+        self.assertIn("integrations", ids)                  # the architecture-level question is asked
+        self.assertEqual(ids[:2], ["intent", "current_pain"])   # common surface questions lead
+
+    def test_low_complexity_stays_surface(self):
+        tree, routing = self._data()
+        cls = {"cluster": "integration", "complexity": "low", "decision_risk": "low"}
+        depth, sel = intake.select_questions(cls, tree, routing)
+        self.assertEqual(depth, "surface")
+        self.assertNotIn("realtime", [q["id"] for q in sel])    # the architecture question is skipped
+
+    def test_escalation_overrides_low_complexity(self):
+        tree, routing = self._data()
+        cls = {"cluster": "integration", "complexity": "low", "decision_risk": "high"}
+        depth, _ = intake.select_questions(cls, tree, routing)
+        self.assertEqual(depth, "architecture")             # escalate rule {integration, high} fires
+
+    def test_questions_op_on_vendor_prework(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = intake.questions_op(os.path.join(EX, "vendor-prework.yaml"))
+        self.assertEqual(rc, 0)
+        self.assertIn("What no longer scales?", buf.getvalue())   # system_replacement, depth architecture
+
+
 class TestFacilitate(unittest.TestCase):
     def test_followup_requires_outcomes(self):
         with tempfile.TemporaryDirectory() as d:
