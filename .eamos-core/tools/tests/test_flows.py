@@ -66,6 +66,22 @@ class TestSeries(unittest.TestCase):
             self.assertEqual((arr["prior"], arr["current"], arr["direction"]), ("11.8M€", "12.4M€", "up"))
 
 
+class TestVendorSelectionSeries(unittest.TestCase):
+    def test_series_carries_shortlist_across_archetypes(self):
+        with tempfile.TemporaryDirectory() as d:
+            store = os.path.join(d, "s.json")
+            req = os.path.join(EX, "series", "vendor-req.yaml")
+            dec = os.path.join(EX, "series", "vendor-decision.yaml")
+            self.assertEqual(quiet(series.close, req, store), 0)          # discovery hypotheses (decision_list)
+            s = _json(store)
+            self.assertTrue(any("Vendor X" in x["decision"] for x in s["decision_log"]))   # shortlist carried
+            digest = os.path.join(d, "cf.json")
+            self.assertEqual(quiet(series.open_, dec, store, digest), 0)  # decision instance inherits the shortlist
+            self.assertTrue(_json(digest)["prior_decisions"])
+            self.assertEqual(quiet(series.close, dec, store), 0)          # risk_list carries by kind too (decision)
+            self.assertTrue(any("exit" in a["action"].lower() for a in _json(store)["open_actions"]))
+
+
 class TestIntake(unittest.TestCase):
     def test_reorg_dedupe_and_gap_fill(self):
         with tempfile.TemporaryDirectory() as d:

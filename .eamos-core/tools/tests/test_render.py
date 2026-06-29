@@ -15,7 +15,8 @@ import yamlmini  # noqa: E402
 import render    # noqa: E402
 
 REFS = ["qbr-c-level", "esc-decision", "qbr-finance", "rca-eng", "board-confidential",
-        "planning-release", "retro-sprint", "discovery-product", "one-on-one", "vendor-prework"]
+        "planning-release", "retro-sprint", "discovery-product", "one-on-one", "vendor-prework",
+        "vendor-selection"]
 
 
 def load(name):

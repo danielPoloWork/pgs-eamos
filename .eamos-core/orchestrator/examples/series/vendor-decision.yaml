@@ -1,0 +1,61 @@
+# vendor-decision.yaml — vendor-selection SERIES, instance 2: scoring + decision (decision). RFC-0005.
+# Opens with carry_forward from REQ (the shortlist + open actions + risks). Renders standalone
+# gate-green too. The richer scorecard/topology composition is the bundle (vendor-selection.yaml).
+schema_version: 1
+
+identity:
+  series_id: vendor-platform-2026
+  instance: DECISION
+  series_name: "Selezione piattaforma — Decisione"
+  archetype: decision
+  audience_altitude: vp
+
+# The moat (RFC-0001 §9): this instance opens knowing what REQ shortlisted.
+carry_forward:
+  from_instance: REQ
+  decisions: true
+  open_actions: true
+  rolling_risks: true
+  kpi_history: true
+
+context:
+  company_size: enterprise
+  industry: fintech
+  regulatory: [SOX]
+  formality: high
+  output_lang: it
+
+objective: "Scegliere la piattaforma H2 dalla shortlist e approvare il prossimo passo."
+
+deliverables:
+  - { type: presentation, format: speaker, length: medium }
+
+inputs:
+  cost.buy: { label: "TCO buy (3 anni)", value: "1.9M€", provided: true, source: "offerta vendor X", provenance: sourced }
+
+content:
+  context_framing:
+    title: "Contesto"
+    body: "Decisione sulla shortlist raccolta nella fase requisiti."
+  options:
+    title: "Opzioni"
+    options:
+      - { name: "Buy (vendor X)", pro: "Operativo subito, {{cost.buy}}", con: "Lock-in vendor" }
+      - { name: "Build in-house", pro: "Controllo pieno", con: "Time-to-value lungo" }
+      - { name: "Nessuna azione (status quo)", pro: "Nessun costo immediato", con: "Volumi H2 non sostenuti", no_action: true }
+  recommendation:
+    title: "Raccomandazione"
+    body: "Raccomandazione: buy da vendor X a {{cost.buy}}."
+  risks_and_mitigations:
+    title: "Rischi e mitigazioni"
+    risks:
+      - { risk: "Lock-in sul vendor X", ask: "Clausola di exit nel contratto" }
+  decision_ask:
+    title: "Decisione richiesta"
+    decisions:
+      - "Approvare buy (vendor X) a {{cost.buy}}."
+  decision_contract:
+    title: "Contratto di decisione"
+    next_step: "RFP/contratto con clausola di exit"
+    residual_risks:
+      - "SLA da confermare nel contratto"
