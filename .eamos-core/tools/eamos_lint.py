@@ -16,6 +16,7 @@ Gates:
   no-action-considered       — any solution space (an option_list) includes the no-action baseline.
   classification-valid       — a problem-type classification (if present) uses taxonomy-allowed values.
   questions-valid            — the adaptive question tree + routing stay consistent with the taxonomy.
+  topology-valid             — a topology diagram's edges/kinds/patterns are declared and in-vocabulary.
 """
 
 import os
@@ -149,6 +150,30 @@ def gate_questions_valid():
             fail("questions-valid", f"escalation decision_risk '{rule.get('decision_risk')}' is not in the taxonomy")
 
 
+def gate_topology_valid(manifest):
+    """Topology integrity (RFC-0004, #22): if a manifest has a `topology:` block, every edge from/to
+    references a declared node id, and every node `kind` / edge `pattern` is in the architecture
+    deliverable's vocabulary. Structural + decidable; absent topology passes. (Node-label grounding
+    is handled at render in build_topology_ir — labeled + into the topology review appendix.)"""
+    spec = manifest.get("topology")
+    if not isinstance(spec, dict):
+        return
+    vocab = (render.load_deliverable("architecture") or {}).get("vocab", {}) or {}
+    kinds, patterns = set(vocab.get("node_kind", []) or []), set(vocab.get("edge_pattern", []) or [])
+    node_ids = set()
+    for nd in spec.get("nodes", []) or []:
+        node_ids.add(nd.get("id"))
+        if kinds and nd.get("kind") not in kinds:
+            fail("topology-valid", f"node '{nd.get('id')}' kind '{nd.get('kind')}' not in {sorted(kinds)}")
+    for e in spec.get("edges", []) or []:
+        for end in ("from", "to"):
+            if e.get(end) not in node_ids:
+                fail("topology-valid", f"edge {end}='{e.get(end)}' references an undeclared node")
+        if patterns and e.get("pattern") not in patterns:
+            fail("topology-valid",
+                 f"edge '{e.get('from')}'->'{e.get('to')}' pattern '{e.get('pattern')}' not in {sorted(patterns)}")
+
+
 def gate_registry_params(manifest):
     """Every deliverable's params are within the registry's declared enums (RFC-0002 §4)."""
     for d in manifest.get("deliverables", []) or []:
@@ -236,6 +261,7 @@ def main():
     gate_no_action_considered(manifest, archetype)
     gate_classification_valid(manifest)
     gate_questions_valid()
+    gate_topology_valid(manifest)
     gate_registry_params(manifest)
     gate_rubric(manifest, deck_ir)
     gate_confidentiality(manifest)   # last: it inspects the other gates' results

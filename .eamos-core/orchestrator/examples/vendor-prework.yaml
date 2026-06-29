@@ -38,6 +38,7 @@ discovery_intake:
 
 deliverables:
   - { type: presentation, format: detailed, length: medium }
+  - { type: architecture, layout: layered }            # the target-architecture diagram (#22)
 
 inputs:
   # Use-case matrix (freq × criticità × dati)
@@ -128,6 +129,11 @@ inputs:
   sc.buy.cost: { label: "Buy × Costo", value: "4", provided: true, source: "offerta vendor X", provenance: sourced }
   sc.buy.ttv: { label: "Buy × Time-to-value", value: "5", provided: true, source: "offerta vendor X", provenance: sourced }
   sc.buy.compliance: { label: "Buy × Compliance", value: "3", provided: true, source: "valutazione security", provenance: sourced }
+  # Systems for the target-architecture diagram (#22) — node labels (grounded). Vendor X is assumed.
+  sys.platform: { label: "Piattaforma H2", value: "Nuova piattaforma H2", provided: true, source: "target architecture", provenance: sourced }
+  sys.erp: { label: "ERP", value: "ERP aziendale", provided: true, source: "mappa sistemi", provenance: sourced }
+  sys.sso: { label: "SSO/AD", value: "SSO / AD", provided: true, source: "mappa sistemi", provenance: sourced }
+  sys.vendorx: { label: "Vendor X", value: "Vendor X (SaaS)", provided: false, provenance: assumed, assumption: "sistema vendor proposto, da confermare in RFP", fill_from: "RFP vendor", review_required: true }
 
 # Weighted scorecard (#23): render.py computes total.* deterministically from these (no formulas).
 scorecard:
@@ -138,6 +144,18 @@ scorecard:
   options:
     - { name: "Build in-house", total: total.build, scores: { cost: sc.build.cost, ttv: sc.build.ttv, compliance: sc.build.compliance } }
     - { name: "Buy (vendor X)", total: total.buy, scores: { cost: sc.buy.cost, ttv: sc.buy.ttv, compliance: sc.buy.compliance } }
+
+# Target-architecture diagram (#22, RFC-0004): typed nodes (systems) + typed edges (integrations).
+topology:
+  nodes:
+    - { id: platform, label: sys.platform, kind: app }
+    - { id: erp,      label: sys.erp,      kind: erp }
+    - { id: sso,      label: sys.sso,      kind: sso }
+    - { id: vendorx,  label: sys.vendorx,  kind: external }
+  edges:
+    - { from: platform, to: erp,     pattern: rest }
+    - { from: platform, to: sso,     pattern: rest }
+    - { from: platform, to: vendorx, pattern: event }
 
 content:
   context_framing:

@@ -558,6 +558,47 @@ def build_quiz_ir(manifest, archetype, altitude=None, function=None):
             "questions": questions, "review_appendix": review_appendix}, acc
 
 
+def build_topology_ir(manifest, archetype=None, altitude=None, function=None):
+    """Project the manifest `topology:` block into a topology-IR (RFC-0004, #22): typed nodes
+    (systems) + typed edges (integration patterns). A peer over the SAME ledger (RFC-0002 §7) — a
+    system name cannot diverge from the deck/data-IR. Nodes are grounded: a node `label` binds a
+    ledger cell, sourced renders plain and assumed renders labeled + into the review appendix
+    (RFC-0001 §6). `archetype` is unused (topology is authored, not composed from the structure)."""
+    acc = _new_acc()
+    ctx = manifest.get("context", {}) or {}
+    lang = ctx.get("output_lang", "en")
+    ledger = scorecard_ledger(manifest)
+    spec = manifest.get("topology", {}) or {}
+
+    nodes = []
+    for nd in spec.get("nodes", []) or []:
+        key = nd.get("label")
+        label = resolve_value(key, ledger, acc, lang) if key else str(nd.get("id", ""))
+        cell = ledger.get(key) if isinstance(ledger, dict) else None
+        assumed = isinstance(cell, dict) and cell.get("provenance") == "assumed"
+        nodes.append({"id": nd.get("id"), "label": label, "kind": nd.get("kind", ""), "assumed": bool(assumed)})
+
+    edges = []
+    for e in spec.get("edges", []) or []:
+        assumed = bool(e.get("assumed"))
+        label = ""
+        if e.get("label"):
+            label = resolve_value(e["label"], ledger, acc, lang)
+            cell = ledger.get(e["label"])
+            if isinstance(cell, dict) and cell.get("provenance") == "assumed":
+                assumed = True
+        edges.append({"from": e.get("from"), "to": e.get("to"),
+                      "pattern": e.get("pattern", ""), "label": label, "assumed": assumed})
+
+    review_appendix = [
+        {"binding": k, "value": "" if ledger[k].get("value") is None else str(ledger[k].get("value")),
+         "assumption": ledger[k].get("assumption", ""), "fill_from": ledger[k].get("fill_from", "")}
+        for k in sorted(acc["assumed"])
+    ]
+    return {"deliverable": "architecture", "output_lang": lang, "title": manifest.get("objective", ""),
+            "nodes": nodes, "edges": edges, "review_appendix": review_appendix}, acc
+
+
 def main():
     ap = argparse.ArgumentParser(description="Render an EAMOS meeting manifest into an IR.")
     ap.add_argument("manifest", help="path to a meeting manifest (e.g. examples/qbr-c-level.yaml)")
@@ -565,8 +606,8 @@ def main():
     ap.add_argument("--altitude", help="override the manifest's audience_altitude (e.g. manager)")
     ap.add_argument("--function", help="override the manifest's function pack (e.g. engineering)")
     ap.add_argument("--redact", action="store_true", help="egress redaction of pii/phi/sensitive cells")
-    ap.add_argument("--ir", choices=["deck", "infographic", "data", "mindmap", "quiz"], default="deck",
-                    help="which IR projection to emit (default: deck)")
+    ap.add_argument("--ir", choices=["deck", "infographic", "data", "mindmap", "quiz", "topology"],
+                    default="deck", help="which IR projection to emit (default: deck)")
     args = ap.parse_args()
 
     with open(args.manifest, encoding="utf-8") as fh:
@@ -586,6 +627,9 @@ def main():
     elif args.ir == "quiz":
         ir, acc = build_quiz_ir(manifest, archetype, altitude=args.altitude, function=args.function)
         kind_note = f"{len(ir['questions'])} questions"
+    elif args.ir == "topology":
+        ir, acc = build_topology_ir(manifest, archetype, altitude=args.altitude, function=args.function)
+        kind_note = f"{len(ir['nodes'])} nodes, {len(ir['edges'])} edges"
     else:
         ir, acc = build_deck_ir(manifest, archetype, altitude=args.altitude, function=args.function)
         kind_note = f"{len(ir['slides'])} slides"

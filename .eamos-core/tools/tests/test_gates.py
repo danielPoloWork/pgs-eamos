@@ -35,6 +35,7 @@ def run_gates(m):
     eamos_lint.gate_no_action_considered(m, arch)
     eamos_lint.gate_classification_valid(m)
     eamos_lint.gate_questions_valid()
+    eamos_lint.gate_topology_valid(m)
     eamos_lint.gate_registry_params(m)
     eamos_lint.gate_rubric(m, deck)
     eamos_lint.gate_confidentiality(m)
@@ -77,6 +78,16 @@ class TestTeeth(unittest.TestCase):
             self.assertIn("questions-valid", {g for g, _ in eamos_lint.failures})
         finally:
             render.load_questions = orig
+
+    def test_topology_edge_to_undeclared_node(self):
+        m = load("vendor-prework")
+        m["topology"]["edges"].append({"from": "platform", "to": "ghost", "pattern": "rest"})
+        self.assertIn("topology-valid", run_gates(m))
+
+    def test_topology_out_of_vocab_pattern(self):
+        m = load("vendor-prework")
+        m["topology"]["edges"][0]["pattern"] = "telepathy"     # not in edge_pattern vocab
+        self.assertIn("topology-valid", run_gates(m))
 
     def test_no_action_baseline_required(self):
         m = load("esc-decision")

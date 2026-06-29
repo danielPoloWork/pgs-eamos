@@ -1,0 +1,12 @@
+# Deliverable: architecture (topology-IR -> SVG). Schema: _schema.md. RFC-0004 (#22).
+# The target-architecture / topology diagram: typed nodes (systems) + typed edges (integration
+# patterns), a deterministic projection of the inputs ledger. Emitted via emit_svg (a 3rd canonical
+# layout). The vocabularies below are validated by the topology-valid gate (RFC-0004 §3).
+type: architecture
+ir_family: topology-IR
+params:
+  layout: { enum: [layered], default: layered }   # one canonical layout in v1 (RFC-0004 §8)
+emitter: emit_svg
+vocab:
+  node_kind:    [app, erp, plm, cad, sso, ad, data_store, external]
+  edge_pattern: [rest, event, batch, file]
