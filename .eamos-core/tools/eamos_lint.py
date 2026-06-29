@@ -15,6 +15,7 @@ Gates:
   deliverable-params-in-bounds — requested deliverable params are within the archetype's bounds.
   no-action-considered       — any solution space (an option_list) includes the no-action baseline.
   classification-valid       — a problem-type classification (if present) uses taxonomy-allowed values.
+  questions-valid            — the adaptive question tree + routing stay consistent with the taxonomy.
 """
 
 import os
@@ -113,6 +114,41 @@ def gate_classification_valid(manifest):
                  f"discovery_intake.classification.{dim}='{val}' not in {allowed}")
 
 
+def gate_questions_valid():
+    """Phase-C data integrity (RFC-0003, #28): the adaptive question tree + routing cannot drift from
+    the taxonomy. Structural + decidable, manifest-independent (it validates the shipped os/intake
+    data). Vacuous if the files are absent. Checks: every `clusters` key is a taxonomy cluster; every
+    question has id + ask + a level in `levels`; routing complexity keys + level values are valid;
+    every escalation rule references a taxonomy-valid cluster + decision_risk."""
+    tree, routing = render.load_questions(), render.load_routing()
+    if not tree and not routing:
+        return
+    tax = render.load_classification()
+    clusters = set(tax.get("cluster", []) or [])
+    risks = set(tax.get("decision_risk", []) or [])
+    complexities = set(tax.get("complexity", []) or [])
+    levels = set(tree.get("levels", []) or [])
+    groups = [("common", tree.get("common", []))] + list((tree.get("clusters", {}) or {}).items())
+    for name, qs in groups:
+        if name != "common" and clusters and name not in clusters:
+            fail("questions-valid", f"question tree cluster '{name}' is not in the taxonomy")
+        for q in qs or []:
+            if not (isinstance(q, dict) and q.get("id") and q.get("ask")):
+                fail("questions-valid", f"a question in '{name}' is missing id/ask")
+            elif levels and q.get("level") not in levels:
+                fail("questions-valid", f"question '{q.get('id')}' has level '{q.get('level')}' not in {sorted(levels)}")
+    for comp, lvl in (routing.get("by_complexity", {}) or {}).items():
+        if complexities and comp not in complexities:
+            fail("questions-valid", f"routing by_complexity key '{comp}' is not a taxonomy complexity")
+        if levels and lvl not in levels:
+            fail("questions-valid", f"routing by_complexity['{comp}']='{lvl}' is not a level")
+    for rule in (routing.get("escalate_to_architecture", []) or []):
+        if clusters and rule.get("cluster") not in clusters:
+            fail("questions-valid", f"escalation cluster '{rule.get('cluster')}' is not in the taxonomy")
+        if risks and rule.get("decision_risk") not in risks:
+            fail("questions-valid", f"escalation decision_risk '{rule.get('decision_risk')}' is not in the taxonomy")
+
+
 def gate_registry_params(manifest):
     """Every deliverable's params are within the registry's declared enums (RFC-0002 §4)."""
     for d in manifest.get("deliverables", []) or []:
@@ -199,6 +235,7 @@ def main():
     gate_params_in_bounds(manifest, archetype)
     gate_no_action_considered(manifest, archetype)
     gate_classification_valid(manifest)
+    gate_questions_valid()
     gate_registry_params(manifest)
     gate_rubric(manifest, deck_ir)
     gate_confidentiality(manifest)   # last: it inspects the other gates' results

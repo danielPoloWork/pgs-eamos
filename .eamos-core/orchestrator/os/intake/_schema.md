@@ -65,3 +65,15 @@ A meeting records its classification in `discovery_intake.classification` (manif
 to **routing depth** (Phase C, #28): e.g. low impact/complexity skips the deep-architecture layer;
 core-business + high integration activates it. English on disk (RFC-0001 §7) — stable ids.
 
+## Adaptive questioning & routing (Phase C, #28 — RFC-0003)
+
+The branching question tree ([`questions.yaml`](questions.yaml)) and the routing table
+([`routing.yaml`](routing.yaml)) turn a classification into *which questions to ask, how deep*. The
+tree is keyed by cluster; each question carries a depth `level` (surface → deeper → architecture).
+Routing maps `complexity` to a base level, with an `escalate_to_architecture` list over
+`cluster × decision_risk`. The deterministic selector — `python tools/intake.py --questions <manifest>`
+— emits the ordered questions for the #32 "targeted questions" phase: `common` + the cluster's
+questions up to the routed depth, level by level (progressive disclosure). The agent **asks**; the
+human **answers** (answers populate `discovery_intake`); nothing is fabricated (RFC-0001 §6, §8). The
+`questions-valid` gate keeps the tree + routing consistent with the taxonomy. Design: [RFC-0003](../../docs/rfc/0003-adaptive-questioning-and-routing.md).
+

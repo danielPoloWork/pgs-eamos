@@ -1,0 +1,13 @@
+# Intelligent routing — Phase C (RFC-0003, #28). Maps the classification (#27) to interview DEPTH:
+# `complexity` sets the base level; an `escalate_to_architecture` rule forces the deep-architecture
+# layer even below `high` complexity. The issue's rule as data: low impact/complexity skips the
+# deep-architecture layer; core-business + high integration (and high-risk replacement/compliance)
+# activates it. Validated against the taxonomy by the `questions-valid` gate.
+by_complexity:
+  low:  surface
+  med:  deeper
+  high: architecture
+escalate_to_architecture:
+  - { cluster: integration,           decision_risk: high }   # core-business + high integration
+  - { cluster: system_replacement,    decision_risk: high }
+  - { cluster: compliance_regulatory, decision_risk: high }

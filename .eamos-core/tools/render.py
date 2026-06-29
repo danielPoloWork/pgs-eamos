@@ -27,6 +27,8 @@ DELIVERABLES = os.path.join(CORE, "orchestrator", "os", "deliverables")
 FUNCTIONS = os.path.join(CORE, "orchestrator", "functions")
 POLICY = os.path.join(CORE, "orchestrator", "os", "confidentiality", "policy.yaml")
 CLASSIFICATION = os.path.join(CORE, "orchestrator", "os", "intake", "classification.yaml")
+QUESTIONS = os.path.join(CORE, "orchestrator", "os", "intake", "questions.yaml")
+ROUTING = os.path.join(CORE, "orchestrator", "os", "intake", "routing.yaml")
 
 BIND_RE = re.compile(r"\{\{\s*([a-z][a-z0-9_.]*)\s*\}\}")
 # The "verify before the room" label for an assumed value, by output language (RFC-0001 §6).
@@ -217,6 +219,22 @@ def load_classification():
     if not os.path.exists(CLASSIFICATION):
         return {}
     with open(CLASSIFICATION, encoding="utf-8") as fh:
+        return yamlmini.load_yaml(fh.read())
+
+
+def load_questions():
+    """The Phase-C adaptive question tree (RFC-0003, #28), or {} if absent."""
+    if not os.path.exists(QUESTIONS):
+        return {}
+    with open(QUESTIONS, encoding="utf-8") as fh:
+        return yamlmini.load_yaml(fh.read())
+
+
+def load_routing():
+    """The Phase-C routing table (RFC-0003, #28), or {} if absent."""
+    if not os.path.exists(ROUTING):
+        return {}
+    with open(ROUTING, encoding="utf-8") as fh:
         return yamlmini.load_yaml(fh.read())
 
 
