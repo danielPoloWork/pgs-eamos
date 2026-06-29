@@ -46,6 +46,7 @@ gates: [<gate-id>, ...]      # the gates this archetype asserts (RFC-0001 §10)
 | `risk_list` | `risks: [{risk, ask}]` | `risk` |
 | `decision_list` | `decisions: [..]` | `decision` |
 | `option_list` | `options: [{name, pro, con}]` | `option` |
+| `decision_contract` | `next_step`, `residual_risks: [..]` | `next_step`, `residual_risk` |
 
 ## Authoring guidance
 

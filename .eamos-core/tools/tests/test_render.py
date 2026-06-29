@@ -72,6 +72,20 @@ class TestGrounding(unittest.TestCase):
         self.assertEqual(arr, "12.4M€")                        # sourced -> no marker
 
 
+class TestDecisionContract(unittest.TestCase):
+    def test_decision_contract_renders_through_md(self):
+        import emit_md
+        m, arch = load("esc-decision")
+        deck, _ = render.build_deck_ir(m, arch)
+        dc = next(s for s in deck["slides"] if s["kind"] == "decision_contract")   # Phase G section present
+        types = [b["type"] for b in dc["blocks"]]
+        self.assertIn("next_step", types)                          # the chosen next step
+        self.assertGreaterEqual(types.count("residual_risk"), 1)   # ≥1 residual risk (distinct from mitigations)
+        md = emit_md.render_md(deck)
+        self.assertIn("Prossimo passo", md)                        # next_step label (output_lang it)
+        self.assertIn("Rischio residuo", md)                       # residual_risk label
+
+
 class TestOverlays(unittest.TestCase):
     def test_altitude_reorders(self):
         m, arch = load("qbr-c-level")

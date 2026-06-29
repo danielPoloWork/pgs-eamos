@@ -50,7 +50,7 @@ def _load(path):
 
 def _flatten(block):
     t = block.get("type")
-    if t in ("lead", "bullet", "prose", "decision"):
+    if t in ("lead", "bullet", "prose", "decision", "next_step", "residual_risk"):
         return block.get("text", "")
     if t == "kpi_row":
         s = f"{block.get('label', '')}: {block.get('value', '')}"

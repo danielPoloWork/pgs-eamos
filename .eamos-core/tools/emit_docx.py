@@ -22,10 +22,12 @@ MUTED = (0x70, 0x70, 0x70)
 LABELS = {
     "it": {"target": "Target", "value": "Valore", "kpi": "KPI", "risk": "Rischio", "ask": "Richiesta",
            "pro": "pro", "con": "contro", "review": "Da verificare prima della sala",
-           "fill": "fonte", "preread": "Pre-read"},
+           "fill": "fonte", "preread": "Pre-read",
+           "next_step": "Prossimo passo", "residual_risk": "Rischio residuo"},
     "en": {"target": "Target", "value": "Value", "kpi": "KPI", "risk": "Risk", "ask": "Ask",
            "pro": "pro", "con": "con", "review": "Verify before the room",
-           "fill": "source", "preread": "Pre-read"},
+           "fill": "source", "preread": "Pre-read",
+           "next_step": "Next step", "residual_risk": "Residual risk"},
 }
 
 
@@ -91,6 +93,14 @@ def build_docx(ir, out_path):
                 _run(p, b.get("name", ""), bold=True)
                 _run(p, f" — {_lab(lang, 'pro')}: {b.get('pro', '')}; "
                         f"{_lab(lang, 'con')}: {b.get('con', '')}")
+            elif t == "next_step":
+                p = doc.add_paragraph()
+                _run(p, f"{_lab(lang, 'next_step')}: ", bold=True)
+                _run(p, b.get("text", ""))
+            elif t == "residual_risk":
+                p = doc.add_paragraph(style="List Bullet")
+                _run(p, f"{_lab(lang, 'residual_risk')}: ", bold=True)
+                _run(p, b.get("text", ""))
 
     appendix = ir.get("review_appendix", [])
     if appendix:

@@ -125,6 +125,11 @@ def _build_section(sec, content, ledger, acc, lang):
                            "name": resolve_text(o.get("name", ""), ledger, acc, lang),
                            "pro": resolve_text(o.get("pro", ""), ledger, acc, lang),
                            "con": resolve_text(o.get("con", ""), ledger, acc, lang)})
+    elif kind == "decision_contract":            # Phase G (#31): the decision contract
+        if c.get("next_step"):
+            blocks.append({"type": "next_step", "text": resolve_text(c["next_step"], ledger, acc, lang)})
+        for r in c.get("residual_risks", []) or []:
+            blocks.append({"type": "residual_risk", "text": resolve_text(r, ledger, acc, lang)})
     return slide
 
 
@@ -389,7 +394,7 @@ def build_data_ir(manifest, archetype, altitude=None, function=None):
 
 def _flatten_block(b):
     t = b.get("type")
-    if t in ("lead", "bullet", "prose", "decision"):
+    if t in ("lead", "bullet", "prose", "decision", "next_step", "residual_risk"):
         return b.get("text", "")
     if t == "kpi_row":
         return f"{b.get('label', '')}: {b.get('value', '')}"

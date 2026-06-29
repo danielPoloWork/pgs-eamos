@@ -16,10 +16,10 @@ import sys
 LABELS = {
     "it": {"target": "target", "risk": "Rischio", "ask": "Richiesta", "decision": "Decisione",
            "review": "Da verificare prima della sala", "objective": "Obiettivo", "fill": "fonte",
-           "pro": "pro", "con": "contro"},
+           "pro": "pro", "con": "contro", "next_step": "Prossimo passo", "residual_risk": "Rischio residuo"},
     "en": {"target": "target", "risk": "Risk", "ask": "Ask", "decision": "Decision",
            "review": "Verify before the room", "objective": "Objective", "fill": "source",
-           "pro": "pro", "con": "con"},
+           "pro": "pro", "con": "con", "next_step": "Next step", "residual_risk": "Residual risk"},
 }
 
 
@@ -63,6 +63,10 @@ def render_md(ir):
             elif t == "option":
                 out.append(f"- **{b.get('name', '')}** — {_lab(lang, 'pro')}: {b.get('pro', '')}; "
                            f"{_lab(lang, 'con')}: {b.get('con', '')}")
+            elif t == "next_step":
+                out.append(f"- **{_lab(lang, 'next_step')}:** {b.get('text', '')}")
+            elif t == "residual_risk":
+                out.append(f"- **{_lab(lang, 'residual_risk')}:** {b.get('text', '')}")
         out.append("")
 
     appendix = ir.get("review_appendix", [])
