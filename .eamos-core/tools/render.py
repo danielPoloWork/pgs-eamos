@@ -121,10 +121,13 @@ def _build_section(sec, content, ledger, acc, lang):
             blocks.append({"type": "decision", "text": resolve_text(d, ledger, acc, lang)})
     elif kind == "option_list":
         for o in c.get("options", []) or []:
-            blocks.append({"type": "option",
-                           "name": resolve_text(o.get("name", ""), ledger, acc, lang),
-                           "pro": resolve_text(o.get("pro", ""), ledger, acc, lang),
-                           "con": resolve_text(o.get("con", ""), ledger, acc, lang)})
+            block = {"type": "option",
+                     "name": resolve_text(o.get("name", ""), ledger, acc, lang),
+                     "pro": resolve_text(o.get("pro", ""), ledger, acc, lang),
+                     "con": resolve_text(o.get("con", ""), ledger, acc, lang)}
+            if o.get("no_action"):            # the no-action baseline (#30); gate-checked, feeds #23
+                block["no_action"] = True
+            blocks.append(block)
     elif kind == "decision_contract":            # Phase G (#31): the decision contract
         if c.get("next_step"):
             blocks.append({"type": "next_step", "text": resolve_text(c["next_step"], ledger, acc, lang)})

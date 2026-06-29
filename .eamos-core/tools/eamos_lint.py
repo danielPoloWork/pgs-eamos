@@ -13,6 +13,7 @@ Gates:
                                in the review appendix with an assumption + review_required flag.
   audience-fit               — the rendered deck respects the altitude slide budget.
   deliverable-params-in-bounds — requested deliverable params are within the archetype's bounds.
+  no-action-considered       — any solution space (an option_list) includes the no-action baseline.
 """
 
 import os
@@ -74,6 +75,24 @@ def gate_params_in_bounds(manifest, archetype):
             if allow is not None and d.get(param) is not None and d[param] not in allow:
                 fail("deliverable-params-in-bounds",
                      f"{dtype}.{param}='{d[param]}' not allowed at {altitude} (allow: {allow})")
+
+
+def gate_no_action_considered(manifest, archetype):
+    """The solution-space baseline (RFC-0001 §13; #30): any meeting that compares options (a section
+    of kind `option_list`) must include the *no-action* option, so the often-ignored 'do nothing'
+    baseline is always on the table. Structural + decidable, altitude-independent: one option in the
+    section's content carries `no_action: true`. Vacuous (passes) for archetypes with no solution
+    space — only `decision` declares an option_list today."""
+    content = manifest.get("content", {}) or {}
+    for sec in archetype.get("structure", []) or []:
+        if sec.get("kind") != "option_list":
+            continue
+        c = content.get(sec["id"], {}) if isinstance(content, dict) else {}
+        options = (c or {}).get("options", []) or []
+        if not any(isinstance(o, dict) and o.get("no_action") for o in options):
+            fail("no-action-considered",
+                 f"option_list section '{sec['id']}' has no no-action option "
+                 "(flag one option `no_action: true` so the baseline is compared)")
 
 
 def gate_registry_params(manifest):
@@ -160,6 +179,7 @@ def main():
     gate_grounding_labeled(deck_ir, acc, ledger)
     gate_audience_fit(deck_ir, archetype)
     gate_params_in_bounds(manifest, archetype)
+    gate_no_action_considered(manifest, archetype)
     gate_registry_params(manifest)
     gate_rubric(manifest, deck_ir)
     gate_confidentiality(manifest)   # last: it inspects the other gates' results

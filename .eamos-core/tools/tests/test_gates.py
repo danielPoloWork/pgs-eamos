@@ -32,6 +32,7 @@ def run_gates(m):
     eamos_lint.gate_grounding_labeled(deck, acc, ledger)
     eamos_lint.gate_audience_fit(deck, arch)
     eamos_lint.gate_params_in_bounds(m, arch)
+    eamos_lint.gate_no_action_considered(m, arch)
     eamos_lint.gate_registry_params(m)
     eamos_lint.gate_rubric(m, deck)
     eamos_lint.gate_confidentiality(m)
@@ -59,6 +60,12 @@ class TestTeeth(unittest.TestCase):
         m = load("qbr-c-level")
         m["inputs"]["kpi.churn_q3"]["review_required"] = False
         self.assertIn("grounding-labeled", run_gates(m))
+
+    def test_no_action_baseline_required(self):
+        m = load("esc-decision")
+        for o in m["content"]["options"]["options"]:
+            o.pop("no_action", None)                       # strip the no-action flag from every option
+        self.assertIn("no-action-considered", run_gates(m))
 
     def test_param_out_of_bounds(self):
         m = load("qbr-c-level")
