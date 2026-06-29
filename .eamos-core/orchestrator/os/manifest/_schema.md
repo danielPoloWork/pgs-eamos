@@ -34,6 +34,13 @@ context:                            # axis 4
 
 objective: <str>                    # localized
 
+# Optional attendee roster / RACI (meeting-conduct metadata, not an IR concept). Rendered into the
+# agenda header by `facilitate.py prep`; absent → renders nothing. `raci` ∈ {R,A,C,I} and
+# `from_phase` (when an actor joins, e.g. a vendor late on purpose) are each optional. Roles are
+# localized prose (output_lang); this block is not gate-checked and does not enter the deck-IR.
+attendees:
+  - { role: <str>, raci: <R|A|C|I>, from_phase: <str> }
+
 deliverables:                       # the bundle requested (RFC-0002 §4); params validated as enums
   - { type: <deliverable-type>, <param>: <value>, ... }
 

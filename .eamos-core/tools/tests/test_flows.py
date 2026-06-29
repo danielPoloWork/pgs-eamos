@@ -31,6 +31,7 @@ Q3 = os.path.join(EX, "qbr-c-level.yaml")
 OUTCOMES = os.path.join(EX, "series", "qbr-q3-outcomes.yaml")
 CSV = os.path.join(EX, "intake", "q3-kpis.csv")
 BOARD = os.path.join(EX, "board-confidential.yaml")
+ESC = os.path.join(EX, "esc-decision.yaml")
 
 
 def quiet(fn, *a, **k):
@@ -94,6 +95,24 @@ class TestFacilitate(unittest.TestCase):
 
     def test_prep_runs(self):
         self.assertEqual(quiet(facilitate.prep, Q3, 60), 0)
+
+    def test_prep_renders_attendee_roster(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = facilitate.prep(ESC, 60)          # esc-decision.yaml carries an attendees roster
+        self.assertEqual(rc, 0)
+        out = buf.getvalue()
+        self.assertIn("Partecipanti", out)          # roster header (output_lang it)
+        self.assertIn("Sponsor / Business owner", out)
+        self.assertIn("RACI: A", out)
+        self.assertIn("entra da raccomandazione", out)   # the vendor joins late on purpose
+
+    def test_prep_without_roster_renders_nothing(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = facilitate.prep(Q3, 60)           # qbr-c-level.yaml has no attendees block
+        self.assertEqual(rc, 0)
+        self.assertNotIn("RACI:", buf.getvalue())  # absent roster → nothing rendered
 
 
 class TestRedaction(unittest.TestCase):
