@@ -116,6 +116,26 @@ inputs:
     provided: true
     source: "offerta vendor X"
     provenance: sourced
+  # Scorecard: pesi (somma 1.0) e punteggi 1–5 per opzione — tutti sourced (#23).
+  w.cost: { label: "Peso — Costo (TCO)", value: "0.4", provided: true, source: "criteri di selezione concordati", provenance: sourced }
+  w.ttv: { label: "Peso — Time-to-value", value: "0.35", provided: true, source: "criteri di selezione concordati", provenance: sourced }
+  w.compliance: { label: "Peso — Compliance/SOX", value: "0.25", provided: true, source: "criteri di selezione concordati", provenance: sourced }
+  sc.build.cost: { label: "Build × Costo", value: "2", provided: true, source: "stima engineering H2", provenance: sourced }
+  sc.build.ttv: { label: "Build × Time-to-value", value: "2", provided: true, source: "piano capacity SAFe", provenance: sourced }
+  sc.build.compliance: { label: "Build × Compliance", value: "4", provided: true, source: "valutazione security", provenance: sourced }
+  sc.buy.cost: { label: "Buy × Costo", value: "4", provided: true, source: "offerta vendor X", provenance: sourced }
+  sc.buy.ttv: { label: "Buy × Time-to-value", value: "5", provided: true, source: "offerta vendor X", provenance: sourced }
+  sc.buy.compliance: { label: "Buy × Compliance", value: "3", provided: true, source: "valutazione security", provenance: sourced }
+
+# Weighted scorecard (#23): render.py computes total.* deterministically from these (no formulas).
+scorecard:
+  criteria:
+    - { id: cost, label: "Costo (TCO)", weight: w.cost }
+    - { id: ttv, label: "Time-to-value", weight: w.ttv }
+    - { id: compliance, label: "Compliance/SOX", weight: w.compliance }
+  options:
+    - { name: "Build in-house", total: total.build, scores: { cost: sc.build.cost, ttv: sc.build.ttv, compliance: sc.build.compliance } }
+    - { name: "Buy (vendor X)", total: total.buy, scores: { cost: sc.buy.cost, ttv: sc.buy.ttv, compliance: sc.buy.compliance } }
 
 content:
   context_framing:
@@ -160,3 +180,8 @@ content:
     next_step: "RFP con i requisiti Must/Should come criteri di sbarramento"
     residual_risks:
       - "SLA non garantito finché non confermato in offerta ({{req.sla}})"
+  weighted_scorecard:
+    title: "Scorecard pesata (totale calcolato, senza formule)"
+    rows:
+      - { metric_binding: total.build }
+      - { metric_binding: total.buy }

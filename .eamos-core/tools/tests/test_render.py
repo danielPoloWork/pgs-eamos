@@ -96,6 +96,37 @@ class TestPreWorkPack(unittest.TestCase):
         self.assertLess(ids.index("use_case_matrix"), ids.index("options"))   # pre-work precedes options
 
 
+class TestScorecard(unittest.TestCase):
+    def test_totals_computed_and_sourced(self):
+        m, _ = load("vendor-prework")
+        led = render.scorecard_ledger(m)
+        self.assertEqual(led["total.build"]["value"], "2.5")   # 0.4*2 + 0.35*2 + 0.25*4
+        self.assertEqual(led["total.buy"]["value"], "4.1")     # 0.4*4 + 0.35*5 + 0.25*3
+        self.assertEqual(led["total.build"]["provenance"], "sourced")
+        self.assertTrue(led["total.buy"]["computed"])
+
+    def test_total_identical_across_projections(self):
+        m, arch = load("vendor-prework")
+        deck, _ = render.build_deck_ir(m, arch)
+        data, _ = render.build_data_ir(m, arch)
+        deck_buy = next(b["value"] for s in deck["slides"] for b in s["blocks"] if b.get("label") == "Buy (vendor X)")
+        data_buy = next(r["value"] for r in data["rows"] if r["label"] == "Buy (vendor X)")
+        self.assertEqual(deck_buy, data_buy)                   # no divergence (one ledger, RFC-0002 §7)
+        self.assertEqual(deck_buy, "4.1")
+
+    def test_assumed_input_propagates_to_total(self):
+        m, arch = load("vendor-prework")
+        m["inputs"]["sc.buy.cost"]["provenance"] = "assumed"   # one score becomes assumed
+        m["inputs"]["sc.buy.cost"]["assumption"] = "stima preliminare"
+        m["inputs"]["sc.buy.cost"]["review_required"] = True
+        self.assertEqual(render.scorecard_ledger(m)["total.buy"]["provenance"], "assumed")  # propagates
+        deck, acc = render.build_deck_ir(m, arch)
+        self.assertIn("total.buy", acc["assumed"])             # marked assumed on render
+        buy = next(b["value"] for s in deck["slides"] for b in s["blocks"] if b.get("label") == "Buy (vendor X)")
+        self.assertIn("⟨", buy)                                # rendered labeled
+        self.assertIn("total.buy", {a["binding"] for a in deck["review_appendix"]})  # + in the appendix
+
+
 class TestDiscoveryIntake(unittest.TestCase):
     def test_l0_l1_l2_typed_capture(self):
         m, _ = load("esc-decision")

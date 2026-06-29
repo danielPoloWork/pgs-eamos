@@ -61,6 +61,58 @@ def resolve_text(text, ledger, acc, lang):
     return BIND_RE.sub(lambda m: resolve_value(m.group(1), ledger, acc, lang), text)
 
 
+def _fmt_num(x):
+    """Deterministic compact number: round to 2 decimals, drop a trailing .0 / zeros."""
+    r = round(x, 2)
+    return str(int(r)) if r == int(r) else f"{r:.2f}".rstrip("0").rstrip(".")
+
+
+def scorecard_ledger(manifest):
+    """The inputs ledger augmented with computed weighted-scorecard totals (#23). Non-mutating:
+    returns a NEW dict (the manifest is untouched). Each option's total = Σ(weight × score) over the
+    criteria, emitted as a *computed* cell — its provenance is `sourced` iff every weight and score
+    is sourced, else `assumed` (so it renders labeled + lands in the review appendix, RFC-0001 §6).
+
+    This keeps the sheet formula-free (the value is final text) and deterministic: the total is
+    identical across deck / xlsx / infographic because it is just another ledger cell (RFC-0002 §7).
+    A computed total always overrides any hand-provided cell of the same key — it cannot be faked.
+    Scorecard spec (manifest top-level):
+        scorecard:
+          criteria: [{ id, label, weight: <ledger-key> }, ...]
+          options:  [{ name, total: <ledger-key>, scores: { <criterion-id>: <ledger-key>, ... } }, ...]
+    """
+    base = dict(manifest.get("inputs", {}) or {})
+    spec = manifest.get("scorecard")
+    if not isinstance(spec, dict):
+        return base
+    criteria = spec.get("criteria", []) or []
+    for opt in spec.get("options", []) or []:
+        total, assumed, ok = 0.0, False, True
+        for crit in criteria:
+            wcell = base.get(crit.get("weight"))
+            scell = base.get((opt.get("scores", {}) or {}).get(crit.get("id")))
+            try:
+                total += (float(str(wcell.get("value")).replace(",", "."))
+                          * float(str(scell.get("value")).replace(",", ".")))
+            except (AttributeError, ValueError, TypeError):
+                ok = False
+                break
+            if wcell.get("provenance") == "assumed" or scell.get("provenance") == "assumed":
+                assumed = True
+        total_key = opt.get("total")
+        if not ok or not total_key:
+            continue                       # misconfigured/missing -> leave it; the binding surfaces it
+        cell = {"label": opt.get("name", total_key), "value": _fmt_num(total),
+                "provided": True, "source": "computed from criteria × weights",
+                "provenance": "assumed" if assumed else "sourced", "computed": True}
+        if assumed:
+            cell["assumption"] = "weighted total includes an assumed weight or score"
+            cell["fill_from"] = "confirm the assumed weights/scores"
+            cell["review_required"] = True
+        base[total_key] = cell
+    return base
+
+
 def apply_overlays(structure, shaping):
     """Compose the effective section list: base structure + the altitude overlay (RFC-0001 §3).
 
@@ -237,7 +289,7 @@ def build_deck_ir(manifest, archetype, altitude=None, function=None):
     acc = _new_acc()
     ident = manifest.get("identity", {}) or {}
     ctx = manifest.get("context", {}) or {}
-    ledger = manifest.get("inputs", {}) or {}
+    ledger = scorecard_ledger(manifest)
     content = manifest.get("content", {}) or {}
     lang = ctx.get("output_lang", "en")
     altitude = altitude or ident.get("audience_altitude", "")
@@ -282,7 +334,7 @@ def build_infographic_ir(manifest, archetype, altitude=None, function=None):
     acc = _new_acc()
     ident = manifest.get("identity", {}) or {}
     ctx = manifest.get("context", {}) or {}
-    ledger = manifest.get("inputs", {}) or {}
+    ledger = scorecard_ledger(manifest)
     content = manifest.get("content", {}) or {}
     lang = ctx.get("output_lang", "en")
     altitude = altitude or ident.get("audience_altitude", "")
@@ -346,7 +398,7 @@ def build_data_ir(manifest, archetype, altitude=None, function=None):
     acc = _new_acc()
     ident = manifest.get("identity", {}) or {}
     ctx = manifest.get("context", {}) or {}
-    ledger = manifest.get("inputs", {}) or {}
+    ledger = scorecard_ledger(manifest)
     content = manifest.get("content", {}) or {}
     lang = ctx.get("output_lang", "en")
     altitude = altitude or ident.get("audience_altitude", "")
@@ -414,7 +466,7 @@ def build_graph_ir(manifest, archetype, altitude=None, function=None):
     acc = _new_acc()
     ident = manifest.get("identity", {}) or {}
     ctx = manifest.get("context", {}) or {}
-    ledger = manifest.get("inputs", {}) or {}
+    ledger = scorecard_ledger(manifest)
     content = manifest.get("content", {}) or {}
     lang = ctx.get("output_lang", "en")
     altitude = altitude or ident.get("audience_altitude", "")
@@ -446,7 +498,7 @@ def build_quiz_ir(manifest, archetype, altitude=None, function=None):
     acc = _new_acc()
     ident = manifest.get("identity", {}) or {}
     ctx = manifest.get("context", {}) or {}
-    ledger = manifest.get("inputs", {}) or {}
+    ledger = scorecard_ledger(manifest)
     content = manifest.get("content", {}) or {}
     lang = ctx.get("output_lang", "en")
     stem, disc = _QUIZ_STEM.get(lang, _QUIZ_STEM["en"]), _QUIZ_DISC.get(lang, _QUIZ_DISC["en"])
