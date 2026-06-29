@@ -30,10 +30,12 @@ import series    # noqa: E402
 LABELS = {
     "it": {"agenda": "Agenda", "script": "Script di facilitazione", "min": "min", "obj": "Obiettivo",
            "talk": "Punti da toccare", "minutes": "Verbale", "decisions": "Decisioni",
-           "actions": "Azioni", "owner": "owner", "due": "scadenza", "notes": "Note"},
+           "actions": "Azioni", "owner": "owner", "due": "scadenza", "notes": "Note",
+           "attendees": "Partecipanti", "joins_at": "entra da"},
     "en": {"agenda": "Agenda", "script": "Facilitation script", "min": "min", "obj": "Objective",
            "talk": "Talking points", "minutes": "Minutes", "decisions": "Decisions",
-           "actions": "Action items", "owner": "owner", "due": "due", "notes": "Notes"},
+           "actions": "Action items", "owner": "owner", "due": "due", "notes": "Notes",
+           "attendees": "Attendees", "joins_at": "joins at"},
 }
 
 
@@ -67,6 +69,25 @@ def _timeboxes(n, total):
     return boxes
 
 
+def _roster(attendees, lang):
+    """The optional attendee roster / RACI (manifest `attendees:`), rendered into the agenda header.
+    Structural and non-fabricating: an absent or empty roster renders nothing. `raci` and `from_phase`
+    are each optional per attendee; a late-joining actor (e.g. a vendor) carries its phase."""
+    rows = [a for a in (attendees or []) if isinstance(a, dict) and a.get("role")]
+    if not rows:
+        return []
+    out = [f"**{_lab(lang, 'attendees')}**", ""]
+    for a in rows:
+        line = f"- {a['role']}"
+        if a.get("raci"):
+            line += f" — RACI: {a['raci']}"
+        if a.get("from_phase"):
+            line += f"  ·  {_lab(lang, 'joins_at')} {a['from_phase']}"
+        out.append(line)
+    out.append("")
+    return out
+
+
 def prep(manifest_path, minutes):
     m = _load(manifest_path)
     archetype = render.load_archetype(m.get("identity", {}).get("archetype", "review"))
@@ -76,6 +97,7 @@ def prep(manifest_path, minutes):
     boxes = _timeboxes(len(slides), minutes)
 
     out = [f"# {_lab(lang, 'agenda')} — {m.get('objective', '')}", ""]
+    out += _roster(m.get("attendees"), lang)   # optional roster / RACI in the agenda header (#25)
     clock = 0
     for s, box in zip(slides, boxes):
         out.append(f"- {clock:>3}–{clock + box:<3} {_lab(lang, 'min')}  ·  {s.get('title', s.get('id'))}")

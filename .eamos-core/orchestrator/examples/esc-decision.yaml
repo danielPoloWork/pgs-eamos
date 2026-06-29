@@ -19,6 +19,14 @@ context:
 
 objective: "Approvare l'opzione di investimento piattaforma H2 e sbloccare il budget."
 
+# Roster del comitato di steering (RACI). Il vendor entra apposta tardi, solo alla raccomandazione.
+attendees:
+  - { role: "Sponsor / Business owner", raci: "A" }
+  - { role: "IT / Architetto", raci: "R" }
+  - { role: "Finance", raci: "C", from_phase: "opzioni" }
+  - { role: "Sicurezza / Compliance", raci: "C", from_phase: "rischi" }
+  - { role: "Vendor X", raci: "I", from_phase: "raccomandazione" }
+
 deliverables:
   - { type: presentation, format: speaker, length: short }
 
