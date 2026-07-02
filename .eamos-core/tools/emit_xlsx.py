@@ -19,6 +19,8 @@ import sys
 import _cli    # utf8_stdio (#54)
 import labels  # chrome labels as data (#61)
 
+SUPPORTED_IR_VERSION = 1   # the IR contract this emitter was written for (#62)
+
 def _lab(lang, key):
     return labels.lab(lang, "xlsx", key)   # chrome labels as data (#61)
 
@@ -97,6 +99,7 @@ def main():
 
     with open(args.data_ir, encoding="utf-8") as fh:
         ir = json.load(fh)
+    _cli.require_ir_version(ir, "emit_xlsx", SUPPORTED_IR_VERSION)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     n = build_xlsx(ir, args.out)
     print(f"emit_xlsx: OK — KPI table ({n} rows) -> {args.out}")

@@ -21,6 +21,15 @@ def read_text(path, what="file"):
         return fh.read()
 
 
+def require_ir_version(ir, tool, supported):
+    """Refuse an IR artifact from a different contract version (#62). A persisted build/*.json
+    outlives tool runs — a silent mis-render is worse than a one-command re-render."""
+    v = ir.get("ir_version") if isinstance(ir, dict) else None
+    if v != supported:
+        raise SystemExit(f"{tool}: IR version {v!r} not supported (expected {supported}); "
+                         "re-render the manifest")
+
+
 def utf8_stdio():
     """Force UTF-8 stdout/stderr regardless of the platform code page. Call first in every main()."""
     for stream in (sys.stdout, sys.stderr):

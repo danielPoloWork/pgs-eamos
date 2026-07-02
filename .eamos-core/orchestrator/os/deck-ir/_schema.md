@@ -6,6 +6,8 @@ archetype; the gates run **on the IR**; the cosmetic `emit_*` hop turns it into 
 DOCX / SVG / XLSX. Same manifest → same IR → same bytes.
 
 ```yaml
+ir_version:   <int>                               # the IR contract version (#62); emitters refuse a mismatch
+generator:    eamos-render                        # provenance of the artifact
 deliverable:  <type, e.g. presentation>           # from the manifest's deliverables[] (RFC-0002 §4)
 format:       <e.g. speaker | detailed>           # presentation render mode
 length:       <short | medium | long>
@@ -42,3 +44,8 @@ review_appendix:                                   # the "verify before the room
   never drops a `required` section).
 - **Deterministic serialization.** JSON, `indent=2`, `ensure_ascii=False`, insertion order;
   `review_appendix` sorted by binding key. No clocks, no randomness, no filesystem order.
+- **Versioned contract (#62).** Every projection (all six IR families) stamps `ir_version` +
+  `generator`. `ir_version` increments on **any breaking change to block/field shapes**; every
+  emitter validates it before rendering and refuses a mismatch (or an absent field — a pre-#62
+  artifact) with *"re-render the manifest"* — a persisted `build/*.json` outlives tool runs, and a
+  silent mis-render is worse than a one-command re-render.

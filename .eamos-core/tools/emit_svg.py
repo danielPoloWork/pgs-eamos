@@ -21,6 +21,8 @@ import sys
 import _cli    # utf8_stdio (#54)
 import labels  # chrome labels as data (#61)
 
+SUPPORTED_IR_VERSION = 1   # the IR contract this emitter was written for (#62)
+
 # Per visual_style palette (background, accent, body, amber, muted, card). Unknown styles fall back
 # to professional. Layout is shared; only the palette/theme changes (RFC-0002 §11-1).
 THEMES = {
@@ -244,6 +246,7 @@ def main():
 
     with open(args.ir_json, encoding="utf-8") as fh:
         ir = json.load(fh)
+    _cli.require_ir_version(ir, "emit_svg", SUPPORTED_IR_VERSION)
     deliv = ir.get("deliverable")
     if deliv == "mindmap":
         svg, kind, note = build_mindmap_svg(ir), "mindmap", f"{len(ir.get('branches', []))} branches"

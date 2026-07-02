@@ -349,6 +349,33 @@ class TestUserErrors(unittest.TestCase):
             self.assertEqual(quiet(facilitate.prep, p, 60), 0)
 
 
+class TestIRVersionGate(unittest.TestCase):
+    def test_emitter_rejects_unversioned_ir(self):
+        # A pre-#62 (or future) artifact must be refused with a one-command recovery, never
+        # mis-rendered silently.
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "old-ir.json")
+            with open(p, "w", encoding="utf-8") as fh:
+                json.dump({"deliverable": "presentation", "slides": []}, fh)
+            out = subprocess.run([sys.executable, os.path.join(TOOLS, "emit_md.py"), p],
+                                 capture_output=True, text=True)
+            self.assertNotEqual(out.returncode, 0)
+            self.assertIn("re-render the manifest", out.stderr)
+            self.assertNotIn("Traceback", out.stderr)
+
+    def test_emitter_accepts_current_ir(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            ir_path, md_path = os.path.join(d, "ir.json"), os.path.join(d, "deck.md")
+            r1 = subprocess.run([sys.executable, os.path.join(TOOLS, "render.py"), Q3, "--out", ir_path],
+                                capture_output=True, text=True)
+            self.assertEqual(r1.returncode, 0, r1.stderr)
+            r2 = subprocess.run([sys.executable, os.path.join(TOOLS, "emit_md.py"), ir_path, "--out", md_path],
+                                capture_output=True, text=True)
+            self.assertEqual(r2.returncode, 0, r2.stderr)
+
+
 class TestPipedStdout(unittest.TestCase):
     def test_piped_stdout_survives_non_utf8_code_page(self):
         # On Windows a piped stdout picks the ANSI code page (cp1252), which cannot encode the

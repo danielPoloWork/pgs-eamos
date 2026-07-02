@@ -15,6 +15,8 @@ import sys
 import _cli    # utf8_stdio (#54)
 import labels  # chrome labels as data (#61)
 
+SUPPORTED_IR_VERSION = 1   # the IR contract this emitter was written for (#62)
+
 
 def _lab(lang, key):
     # Template chrome in the deck's output language (the section labels, not the content).
@@ -111,6 +113,7 @@ def main():
 
     with open(args.deck_ir, encoding="utf-8") as fh:
         ir = json.load(fh)
+    _cli.require_ir_version(ir, "emit_md", SUPPORTED_IR_VERSION)
     text = render_quiz_md(ir) if ir.get("deliverable") == "interview_quiz" else render_md(ir)
     if args.out:
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)

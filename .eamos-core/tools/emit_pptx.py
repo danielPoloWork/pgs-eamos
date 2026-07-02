@@ -19,6 +19,8 @@ import sys
 import _cli    # utf8_stdio (#54)
 import labels  # chrome labels as data (#61)
 
+SUPPORTED_IR_VERSION = 1   # the IR contract this emitter was written for (#62)
+
 NAVY = (0x1E, 0x27, 0x61)      # title
 BODY = (0x2B, 0x2B, 0x2B)      # body text
 AMBER = (0xB8, 0x6B, 0x00)     # assumed / to-verify
@@ -144,6 +146,7 @@ def main():
 
     with open(args.deck_ir, encoding="utf-8") as fh:
         ir = json.load(fh)
+    _cli.require_ir_version(ir, "emit_pptx", SUPPORTED_IR_VERSION)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     n = build_pptx(ir, args.out)
     print(f"emit_pptx: OK — {n} slides -> {args.out}")
