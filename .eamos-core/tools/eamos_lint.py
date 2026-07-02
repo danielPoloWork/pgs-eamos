@@ -8,7 +8,8 @@ composing its deck-IR and checking it. The gates are *structural* and decidable 
     python tools/eamos_lint.py orchestrator/examples/qbr-c-level.yaml
 
 Gates:
-  completeness               — every archetype-required section is present in the deck-IR.
+  completeness               — every archetype-required section is present in the deck-IR, has
+                               substantive content blocks, and carries a real (non-id) title.
   grounding-labeled          — every binding resolves; every assumed value is labeled and listed
                                in the review appendix with an assumption + review_required flag.
   audience-fit               — the rendered deck respects the altitude slide budget.
@@ -36,12 +37,27 @@ def fail(gate, message):
     failures.append((gate, message))
 
 
+def _has_substance(slide):
+    """A slide has substance iff at least one block carries a non-empty text field (#52)."""
+    for block in slide.get("blocks", []) or []:
+        for field, value in block.items():
+            if field != "type" and isinstance(value, str) and value.strip():
+                return True
+    return False
+
+
 def gate_completeness(deck_ir, archetype):
     required = [s["id"] for s in archetype.get("structure", []) or [] if s.get("required")]
-    present = {s["id"] for s in deck_ir.get("slides", [])}
+    slides = {s["id"]: s for s in deck_ir.get("slides", [])}
     for sid in required:
-        if sid not in present:
+        slide = slides.get(sid)
+        if slide is None:
             fail("completeness", f"required section '{sid}' is missing from the deck-IR")
+        elif not _has_substance(slide):
+            fail("completeness", f"required section '{sid}' has no content blocks (empty slide)")
+        elif not slide.get("title") or slide.get("title") == sid:
+            fail("completeness",
+                 f"required section '{sid}' has no title (the raw section id would render as the heading)")
 
 
 def gate_grounding_labeled(deck_ir, acc, ledger):
