@@ -25,30 +25,13 @@ import sys
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
 import _cli      # noqa: E402  (utf8_stdio, #54)
+import labels    # noqa: E402  (chrome labels as data, #61)
 import yamlmini  # noqa: E402
 import render    # noqa: E402
 import series    # noqa: E402
 
-LABELS = {
-    "it": {"agenda": "Agenda", "script": "Script di facilitazione", "min": "min", "obj": "Obiettivo",
-           "talk": "Punti da toccare", "minutes": "Verbale", "decisions": "Decisioni",
-           "actions": "Azioni", "owner": "owner", "due": "scadenza", "notes": "Note",
-           "attendees": "Partecipanti", "joins_at": "entra da",
-           "input_gathering": "Raccolta input", "live_classification": "Classificazione dal vivo",
-           "targeted_questions": "Domande mirate", "structured_synthesis": "Sintesi strutturata",
-           "decision_framing": "Inquadramento decisione"},
-    "en": {"agenda": "Agenda", "script": "Facilitation script", "min": "min", "obj": "Objective",
-           "talk": "Talking points", "minutes": "Minutes", "decisions": "Decisions",
-           "actions": "Action items", "owner": "owner", "due": "due", "notes": "Notes",
-           "attendees": "Attendees", "joins_at": "joins at",
-           "input_gathering": "Input gathering", "live_classification": "Live classification",
-           "targeted_questions": "Targeted questions", "structured_synthesis": "Structured synthesis",
-           "decision_framing": "Decision framing"},
-}
-
-
 def _lab(lang, k):
-    return LABELS.get(lang, LABELS["en"]).get(k, LABELS["en"][k])
+    return labels.lab(lang, "facilitate", k)   # chrome labels as data (#61)
 
 
 def _load(path, what="manifest"):

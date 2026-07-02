@@ -20,6 +20,7 @@ import sys
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
 import _cli      # noqa: E402  (utf8_stdio, #54)
+import labels    # noqa: E402  (chrome labels as data, #61)
 import yamlmini  # noqa: E402
 
 CORE = os.path.dirname(TOOLS)
@@ -32,8 +33,6 @@ QUESTIONS = os.path.join(CORE, "orchestrator", "os", "intake", "questions.yaml")
 ROUTING = os.path.join(CORE, "orchestrator", "os", "intake", "routing.yaml")
 
 BIND_RE = re.compile(r"\{\{\s*([a-z][a-z0-9_.]*)\s*\}\}")
-# The "verify before the room" label for an assumed value, by output language (RFC-0001 §6).
-VERIFY_LABEL = {"it": "da verificare", "en": "to verify", "es": "por verificar", "fr": "à vérifier"}
 # The provenance enum. Anything else — a typo, a missing field, a future value — is treated as
 # assumed (fail closed, #53) and flagged for the grounding gate: only the explicit `sourced`
 # may render plain.
@@ -45,7 +44,8 @@ def _new_acc():
 
 
 def _mark(value, lang):
-    return f"⟨{value} — {VERIFY_LABEL.get(lang, VERIFY_LABEL['en'])}⟩"
+    # The "verify before the room" label for an assumed value (RFC-0001 §6) — chrome as data (#61).
+    return f"⟨{value} — {labels.lab(lang, 'core', 'verify')}⟩"
 
 
 def _cell_assumed(key, cell, acc):
@@ -272,7 +272,7 @@ def apply_redaction(manifest, policy):
     the shared ledger — so EVERY projection is redacted identically (one ledger, RFC-0002 §7)."""
     tags = redact_tags_for(manifest, policy)
     lang = (manifest.get("context", {}) or {}).get("output_lang", "en")
-    mask = "⟦redatto⟧" if lang == "it" else "⟦redacted⟧"
+    mask = f"⟦{labels.lab(lang, 'core', 'redacted')}⟧"
     n = 0
     for cell in (manifest.get("inputs", {}) or {}).values():
         if isinstance(cell, dict) and any(cell.get(t) for t in tags):
@@ -535,10 +535,6 @@ def build_graph_ir(manifest, archetype, altitude=None, function=None):
             "branches": branches, "review_appendix": review_appendix}, acc
 
 
-_QUIZ_STEM = {"it": "Qual è il valore di", "en": "What is the value of"}
-_QUIZ_DISC = {"it": "Qual è la posizione su", "en": "What is the stance on"}
-
-
 def build_quiz_ir(manifest, archetype, altitude=None, function=None):
     """Project an interview quiz (quiz-IR, RFC-0002 §3, §11-3): graded questions cite a ledger
     source (required); discussion questions (from decisions) are un-scored. SAME ledger."""
@@ -548,7 +544,7 @@ def build_quiz_ir(manifest, archetype, altitude=None, function=None):
     ledger = scorecard_ledger(manifest)
     content = manifest.get("content", {}) or {}
     lang = ctx.get("output_lang", "en")
-    stem, disc = _QUIZ_STEM.get(lang, _QUIZ_STEM["en"]), _QUIZ_DISC.get(lang, _QUIZ_DISC["en"])
+    stem, disc = labels.lab(lang, "core", "quiz_stem"), labels.lab(lang, "core", "quiz_disc")
 
     questions = []
     for key, cell in ledger.items():

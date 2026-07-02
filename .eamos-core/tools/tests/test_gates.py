@@ -175,6 +175,33 @@ class TestTeeth(unittest.TestCase):
         self.assertIn("confidentiality", ids)   # SOX flags the failed mandatory gate
 
 
+class TestLabelsValid(unittest.TestCase):
+    def test_incomplete_language_fails_labels_valid(self):
+        import labels
+        orig = labels._cache
+        labels._cache = {"en": {"core": {"verify": "to verify"}},
+                         "de": {"core": {}}}                    # half-localized language (#61)
+        try:
+            findings = eamos_lint.gate_labels_valid()
+            self.assertIn(("labels-valid", "language 'de' is missing label 'core.verify'"), findings)
+        finally:
+            labels._cache = orig
+
+    def test_key_unknown_to_fallback_fails_labels_valid(self):
+        import labels
+        orig = labels._cache
+        labels._cache = {"en": {"core": {"verify": "to verify"}},
+                         "it": {"core": {"verify": "da verificare", "vrfy": "typo"}}}   # drift (#61)
+        try:
+            findings = eamos_lint.gate_labels_valid()
+            self.assertTrue(any("not defined by the 'en' fallback" in msg for _, msg in findings))
+        finally:
+            labels._cache = orig
+
+    def test_shipped_labels_are_complete(self):
+        self.assertEqual(eamos_lint.gate_labels_valid(), [])    # es/fr gap is closed
+
+
 class TestUserErrors(unittest.TestCase):
     def test_empty_identity_does_not_crash_gates(self):
         arch = render.load_archetype("review")

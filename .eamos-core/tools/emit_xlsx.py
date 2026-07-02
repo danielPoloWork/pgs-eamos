@@ -16,18 +16,11 @@ import json
 import os
 import sys
 
-import _cli  # utf8_stdio (#54)
-
-LABELS = {
-    "it": {"kpi": "KPI", "value": "Valore", "target": "Target", "source": "Fonte / nota",
-           "review": "Da verificare prima della sala"},
-    "en": {"kpi": "KPI", "value": "Value", "target": "Target", "source": "Source / note",
-           "review": "Verify before the room"},
-}
-
+import _cli    # utf8_stdio (#54)
+import labels  # chrome labels as data (#61)
 
 def _lab(lang, key):
-    return LABELS.get(lang, LABELS["en"]).get(key, LABELS["en"][key])
+    return labels.lab(lang, "xlsx", key)   # chrome labels as data (#61)
 
 
 def build_xlsx(ir, out_path):

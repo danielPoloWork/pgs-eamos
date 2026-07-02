@@ -16,25 +16,17 @@ import json
 import os
 import sys
 
-import _cli  # utf8_stdio (#54)
+import _cli    # utf8_stdio (#54)
+import labels  # chrome labels as data (#61)
 
 NAVY = (0x1E, 0x27, 0x61)      # title
 BODY = (0x2B, 0x2B, 0x2B)      # body text
 AMBER = (0xB8, 0x6B, 0x00)     # assumed / to-verify
 MUTED = (0x70, 0x70, 0x70)     # captions
 
-LABELS = {
-    "it": {"target": "target", "risk": "Rischio", "ask": "Richiesta", "pro": "pro", "con": "contro",
-           "review": "Da verificare prima della sala", "fill": "fonte",
-           "next_step": "Prossimo passo", "residual_risk": "Rischio residuo"},
-    "en": {"target": "target", "risk": "Risk", "ask": "Ask", "pro": "pro", "con": "con",
-           "review": "Verify before the room", "fill": "source",
-           "next_step": "Next step", "residual_risk": "Residual risk"},
-}
-
 
 def _lab(lang, key):
-    return LABELS.get(lang, LABELS["en"]).get(key, LABELS["en"][key])
+    return labels.lab(lang, "pptx", key)   # chrome labels as data (#61)
 
 
 def _line(block, lang):

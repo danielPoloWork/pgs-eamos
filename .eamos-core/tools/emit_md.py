@@ -12,21 +12,13 @@ import json
 import os
 import sys
 
-import _cli  # utf8_stdio (#54)
-
-# Template chrome in the deck's output language (the section labels, not the content).
-LABELS = {
-    "it": {"target": "target", "risk": "Rischio", "ask": "Richiesta", "decision": "Decisione",
-           "review": "Da verificare prima della sala", "objective": "Obiettivo", "fill": "fonte",
-           "pro": "pro", "con": "contro", "next_step": "Prossimo passo", "residual_risk": "Rischio residuo"},
-    "en": {"target": "target", "risk": "Risk", "ask": "Ask", "decision": "Decision",
-           "review": "Verify before the room", "objective": "Objective", "fill": "source",
-           "pro": "pro", "con": "con", "next_step": "Next step", "residual_risk": "Residual risk"},
-}
+import _cli    # utf8_stdio (#54)
+import labels  # chrome labels as data (#61)
 
 
 def _lab(lang, key):
-    return LABELS.get(lang, LABELS["en"]).get(key, LABELS["en"][key])
+    # Template chrome in the deck's output language (the section labels, not the content).
+    return labels.lab(lang, "md", key)
 
 
 def render_md(ir):
@@ -87,17 +79,11 @@ def render_md(ir):
     return "\n".join(out).rstrip() + "\n"
 
 
-_QUIZ_L = {
-    "it": {"title": "Quiz d'intervista", "graded": "Valutate (citazione richiesta)",
-           "disc": "Discussione (non valutate)", "ans": "Risposta", "src": "fonte", "verify": "da verificare"},
-    "en": {"title": "Interview quiz", "graded": "Graded (citation required)",
-           "disc": "Discussion (un-scored)", "ans": "Answer", "src": "source", "verify": "to verify"},
-}
 
 
 def render_quiz_md(ir):
     lang = ir.get("output_lang", "en")
-    t = _QUIZ_L.get(lang, _QUIZ_L["en"])
+    t = labels.table(lang, "quiz_md")
     out = [f"# {t['title']} — {ir.get('title', '')}", ""]
     graded = [q for q in ir.get("questions", []) if q.get("kind") == "graded"]
     disc = [q for q in ir.get("questions", []) if q.get("kind") == "discussion"]
