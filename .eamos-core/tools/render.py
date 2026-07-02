@@ -165,7 +165,9 @@ def _build_section(sec, content, ledger, acc, lang):
                 entry["target"] = resolve_value(row["target_binding"], ledger, acc, lang)
             blocks.append(entry)
     elif kind == "prose":
-        blocks.append({"type": "prose", "text": resolve_text(c.get("body", ""), ledger, acc, lang)})
+        body = c.get("body") or ""
+        if str(body).strip():                     # an empty body must not fake substance (#52)
+            blocks.append({"type": "prose", "text": resolve_text(body, ledger, acc, lang)})
     elif kind == "risk_list":
         for r in c.get("risks", []) or []:
             blocks.append({"type": "risk",

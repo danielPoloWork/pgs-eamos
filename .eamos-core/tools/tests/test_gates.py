@@ -111,6 +111,24 @@ class TestTeeth(unittest.TestCase):
         m["classification"] = "public"
         self.assertIn("confidentiality", run_gates(m))
 
+    def test_empty_manifest_fails_completeness_per_required_section(self):
+        m = load("qbr-c-level")
+        m["content"], m["inputs"] = {}, {}          # an all-empty manifest must not ship green (#52)
+        ids = run_gates(m)
+        self.assertIn("completeness", ids)
+        msgs = [msg for g, msg in eamos_lint.failures if g == "completeness"]
+        self.assertEqual(len(msgs), 5)              # one message per empty required review section
+
+    def test_empty_required_section_fails_completeness(self):
+        m = load("qbr-c-level")
+        m["content"]["variance_commentary"]["body"] = ""
+        self.assertIn("completeness", run_gates(m))
+
+    def test_untitled_required_section_fails_completeness(self):
+        m = load("qbr-c-level")
+        del m["content"]["exec_summary"]["title"]   # title falls back to the raw section id
+        self.assertIn("completeness", run_gates(m))
+
     def test_sox_makes_grounding_mandatory(self):
         m = load("board-confidential")
         m["inputs"]["kpi.arr"] = {"label": "ARR", "provided": False, "provenance": "assumed"}
