@@ -24,24 +24,15 @@ def load(name):
         return yamlmini.load_yaml(fh.read())
 
 
-def run_gates(m):
+def run_findings(m):
     arch = render.load_archetype(m["identity"]["archetype"])
     deck, acc = render.build_deck_ir(m, arch)
     ledger = render.scorecard_ledger(m)   # include computed scorecard totals (#23)
-    eamos_lint.failures.clear()
-    eamos_lint.gate_manifest_schema(m, arch)
-    eamos_lint.gate_completeness(deck, arch)
-    eamos_lint.gate_grounding_labeled(deck, acc, ledger)
-    eamos_lint.gate_audience_fit(deck, arch)
-    eamos_lint.gate_params_in_bounds(m, arch)
-    eamos_lint.gate_no_action_considered(m, arch)
-    eamos_lint.gate_classification_valid(m)
-    eamos_lint.gate_questions_valid()
-    eamos_lint.gate_topology_valid(m)
-    eamos_lint.gate_registry_params(m)
-    eamos_lint.gate_rubric(m, deck)
-    eamos_lint.gate_confidentiality(m)
-    return {g for g, _ in eamos_lint.failures}
+    return eamos_lint.run_all(m, arch, deck, acc, ledger)   # pure: no global state to clear (#60)
+
+
+def run_gates(m):
+    return {g for g, _ in run_findings(m)}
 
 
 def _deliverable(m, dtype):
@@ -75,9 +66,8 @@ class TestTeeth(unittest.TestCase):
         orig = render.load_questions
         render.load_questions = lambda: {"levels": ["surface"], "clusters": {"teleportation": []}}
         try:
-            eamos_lint.failures.clear()
-            eamos_lint.gate_questions_valid()                       # tree cluster not in the taxonomy
-            self.assertIn("questions-valid", {g for g, _ in eamos_lint.failures})
+            findings = eamos_lint.gate_questions_valid()            # tree cluster not in the taxonomy
+            self.assertIn("questions-valid", {g for g, _ in findings})
         finally:
             render.load_questions = orig
 
@@ -115,9 +105,9 @@ class TestTeeth(unittest.TestCase):
     def test_typoed_cell_field_fails_schema(self):
         m = load("qbr-c-level")
         m["inputs"]["kpi.arr"]["provenence"] = m["inputs"]["kpi.arr"].pop("provenance")   # typo (#59)
-        ids = run_gates(m)
-        self.assertIn("manifest-schema", ids)
-        msgs = [msg for g, msg in eamos_lint.failures if g == "manifest-schema"]
+        findings = run_findings(m)
+        self.assertIn("manifest-schema", {g for g, _ in findings})
+        msgs = [msg for g, msg in findings if g == "manifest-schema"]
         self.assertTrue(any("inputs.kpi.arr.provenence" in msg for msg in msgs))   # path-named
 
     def test_typoed_content_key_fails_schema(self):
@@ -134,9 +124,7 @@ class TestTeeth(unittest.TestCase):
         m = load("qbr-c-level")
         del m["identity"]["archetype"]                    # a defaulted archetype is a guess (#59)
         arch = render.load_archetype("review")
-        eamos_lint.failures.clear()
-        eamos_lint.gate_manifest_schema(m, arch)
-        msgs = [msg for g, msg in eamos_lint.failures if g == "manifest-schema"]
+        msgs = [msg for _, msg in eamos_lint.gate_manifest_schema(m, arch)]
         self.assertTrue(any("identity.archetype is required" in msg for msg in msgs))
 
     def test_unknown_identity_key_fails_schema(self):
@@ -151,9 +139,9 @@ class TestTeeth(unittest.TestCase):
     def test_typoed_provenance_fails_closed(self):
         m = load("qbr-c-level")
         m["inputs"]["kpi.arr"]["provenance"] = "asumed"     # one keystroke from silent fabrication (#53)
-        ids = run_gates(m)
-        self.assertIn("grounding-labeled", ids)
-        msgs = [msg for g, msg in eamos_lint.failures if g == "grounding-labeled"]
+        findings = run_findings(m)
+        self.assertIn("grounding-labeled", {g for g, _ in findings})
+        msgs = [msg for g, msg in findings if g == "grounding-labeled"]
         self.assertTrue(any("not one of sourced|assumed" in msg for msg in msgs))
 
     def test_missing_provenance_fails_closed(self):
@@ -164,9 +152,9 @@ class TestTeeth(unittest.TestCase):
     def test_empty_manifest_fails_completeness_per_required_section(self):
         m = load("qbr-c-level")
         m["content"], m["inputs"] = {}, {}          # an all-empty manifest must not ship green (#52)
-        ids = run_gates(m)
-        self.assertIn("completeness", ids)
-        msgs = [msg for g, msg in eamos_lint.failures if g == "completeness"]
+        findings = run_findings(m)
+        self.assertIn("completeness", {g for g, _ in findings})
+        msgs = [msg for g, msg in findings if g == "completeness"]
         self.assertEqual(len(msgs), 5)              # one message per empty required review section
 
     def test_empty_required_section_fails_completeness(self):
@@ -192,7 +180,6 @@ class TestUserErrors(unittest.TestCase):
         arch = render.load_archetype("review")
         m = load("qbr-c-level")
         m["identity"] = None                       # `identity:` present but empty (#58)
-        eamos_lint.failures.clear()
         eamos_lint.gate_params_in_bounds(m, arch)  # must not raise AttributeError
         deck, _ = render.build_deck_ir(m, arch)
         self.assertTrue(deck["slides"])
