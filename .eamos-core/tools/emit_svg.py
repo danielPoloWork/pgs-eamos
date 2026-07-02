@@ -20,15 +20,19 @@ import sys
 
 import _cli    # utf8_stdio (#54)
 import labels  # chrome labels as data (#61)
+import themes  # theme tokens as data (#64)
 
 SUPPORTED_IR_VERSION = 1   # the IR contract this emitter was written for (#62)
 
-# Per visual_style palette (background, accent, body, amber, muted, card). Unknown styles fall back
-# to professional. Layout is shared; only the palette/theme changes (RFC-0002 §11-1).
-THEMES = {
-    "professional": ("#FFFFFF", "#1E2761", "#2B2B2B", "#B86B00", "#707070", "#EEF1F7"),
-    "scientific":   ("#FFFFFF", "#0B3D5C", "#22303A", "#B8860B", "#5A6B73", "#EAF1F5"),
-}
+
+def _palette(name):
+    """(bg, accent, body, amber, muted, card) from the theme tokens (os/themes/<name>.yaml, #64).
+    An unknown name falls back to the default theme; layout is shared, only the palette changes
+    (RFC-0002 §11-1). Amber is reserved — the grounding signal is identical across themes."""
+    t = themes.load(name)
+    return (f"#{themes.color(t, 'background') or 'FFFFFF'}", f"#{themes.color(t, 'accent') or '1E2761'}",
+            f"#{themes.color(t, 'body') or '2B2B2B'}", f"#{themes.AMBER}",
+            f"#{themes.color(t, 'muted') or '707070'}", f"#{themes.color(t, 'card') or 'EEF1F7'}")
 
 
 def _lab(lang, key):
@@ -64,7 +68,7 @@ def _text(x, y, lines, size, fill, weight="normal", line_h=None):
 
 def build_svg(ir):
     lang = ir.get("output_lang", "en")
-    bg, accent, body, amber, muted, card = THEMES.get(ir.get("visual_style"), THEMES["professional"])
+    bg, accent, body, amber, muted, card = _palette(ir.get("visual_style"))
     orient = ir.get("orientation", "portrait")
     W, H = {"landscape": (1160, 820), "square": (940, 940)}.get(orient, (820, 1160))
     cols = 3 if orient == "landscape" else 2
@@ -146,7 +150,7 @@ def _box(parts, x, y, w, text, fill, txt, size=14, bold=False):
 
 
 def _mindmap_horizontal(ir):
-    bg, accent, body, amber, muted, card = THEMES["professional"]
+    bg, accent, body, amber, muted, card = _palette(ir.get("theme"))
     branches = ir.get("branches", [])
     row_h = 46
     rows = sum(max(1, len(b.get("leaves", []))) for b in branches) or 1
@@ -184,7 +188,7 @@ def _mindmap_horizontal(ir):
 def _mindmap_vertical(ir):
     """The vertical layout (#63): root on top, one column per branch, leaves stacked beneath.
     Deterministic like its horizontal twin — a pure function of the branch order."""
-    bg, accent, body, amber, muted, card = THEMES["professional"]
+    bg, accent, body, amber, muted, card = _palette(ir.get("theme"))
     branches = ir.get("branches", [])
     col_w, box_w, row_h, m = 320, 300, 30, 30
     n = max(1, len(branches))
@@ -220,7 +224,7 @@ def build_topology_svg(ir):
     """A deterministic 'layered' system-topology diagram from a topology-IR (RFC-0004): typed nodes
     placed in a grid by DECLARATION ORDER (a pure function of the order — no force-directed, no
     randomness, RFC-0002 §11-1) + directed, pattern-labeled edges. Assumed nodes/edges are amber."""
-    bg, accent, body, amber, muted, card = THEMES["professional"]
+    bg, accent, body, amber, muted, card = _palette(ir.get("theme"))
     lang = ir.get("output_lang", "en")
     nodes, edges = ir.get("nodes", []) or [], ir.get("edges", []) or []
     cols, nbw, nbh, gx, gy, m, top = 3, 240, 66, 90, 76, 50, 96

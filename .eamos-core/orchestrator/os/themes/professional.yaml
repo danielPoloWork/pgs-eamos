@@ -1,0 +1,13 @@
+# Theme tokens (#64) — corporate identity as DATA, one file per theme. The default theme: its
+# tokens are byte-for-byte the constants the emitters used to hardcode, so default output is
+# unchanged. Add a corporate theme by copying this file — never by editing an emitter.
+# NOTE: the amber "to verify" color is NOT a token — it is the grounding signal (RFC-0001 §6),
+# reserved in code (tools/themes.py); a theme that camouflages assumptions defeats the safety model.
+theme: professional
+font: Calibri
+colors:
+  accent: "1E2761"       # titles / headings / emphasis
+  body: "2B2B2B"         # body text
+  muted: "707070"        # captions, connectors
+  card: "EEF1F7"         # card / box fill
+  background: "FFFFFF"

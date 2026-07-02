@@ -364,12 +364,17 @@ def build_deck_ir(manifest, archetype, altitude=None, function=None):
         for k in sorted(acc["assumed"])
     ]
 
+    # Theme tokens as data (#64): the IR carries the resolved theme NAME; emitters load the tokens.
+    theme = _resolve_params(load_deliverable("presentation"),
+                            _find_deliverable(manifest, "presentation")).get("theme") or "professional"
+
     deck_ir = {
         "ir_version": IR_VERSION,
         "generator": GENERATOR,
         "deliverable": deliverable.get("type", "presentation"),
         "format": deliverable.get("format", "speaker"),
         "length": deliverable.get("length", "medium"),
+        "theme": theme,
         "archetype": archetype.get("archetype", ""),
         "altitude": altitude,
         "output_lang": lang,
@@ -538,16 +543,17 @@ def build_graph_ir(manifest, archetype, altitude=None, function=None):
         leaves = [t for t in (_flatten_block(b) for b in slide["blocks"]) if t][:3]
         branches.append({"label": slide["title"], "leaves": leaves})
 
-    # The orientation param is live (#63): stamped into the IR, the SVG emitter lays out per value.
+    # The orientation param is live (#63); theme name rides along (#64) — the emitter loads tokens.
     params = _resolve_params(load_deliverable("mindmap"), _find_deliverable(manifest, "mindmap"))
     orientation = params.get("orientation") or "horizontal"
+    theme = params.get("theme") or "professional"
     review_appendix = [
         {"binding": k, "value": "" if ledger[k].get("value") is None else str(ledger[k].get("value")),
          "assumption": ledger[k].get("assumption", ""), "fill_from": ledger[k].get("fill_from", "")}
         for k in sorted(acc["assumed"])
     ]
     return {"ir_version": IR_VERSION, "generator": GENERATOR,
-            "deliverable": "mindmap", "orientation": orientation,
+            "deliverable": "mindmap", "orientation": orientation, "theme": theme,
             "output_lang": lang, "root": manifest.get("objective", ""),
             "branches": branches, "review_appendix": review_appendix}, acc
 
@@ -635,8 +641,11 @@ def build_topology_ir(manifest, archetype=None, altitude=None, function=None):
          "assumption": ledger[k].get("assumption", ""), "fill_from": ledger[k].get("fill_from", "")}
         for k in sorted(acc["assumed"])
     ]
+    theme = _resolve_params(load_deliverable("architecture"),
+                            _find_deliverable(manifest, "architecture")).get("theme") or "professional"
     return {"ir_version": IR_VERSION, "generator": GENERATOR,
-            "deliverable": "architecture", "output_lang": lang, "title": manifest.get("objective", ""),
+            "deliverable": "architecture", "theme": theme,
+            "output_lang": lang, "title": manifest.get("objective", ""),
             "nodes": nodes, "edges": edges, "review_appendix": review_appendix}, acc
 
 

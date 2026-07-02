@@ -1,0 +1,10 @@
+# Theme tokens (#64): the scientific/technical palette (deep petrol accents), previously hardcoded
+# in emit_svg.THEMES. The amber grounding signal is reserved in code and identical across themes.
+theme: scientific
+font: Calibri
+colors:
+  accent: "0B3D5C"
+  body: "22303A"
+  muted: "5A6B73"
+  card: "EAF1F5"
+  background: "FFFFFF"

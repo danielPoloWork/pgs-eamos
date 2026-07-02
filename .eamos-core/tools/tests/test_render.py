@@ -168,6 +168,27 @@ class TestDeliverableParams(unittest.TestCase):
         quiz, _ = render.build_quiz_ir(m, arch)
         self.assertEqual([q["q"] for q in quiz["questions"] if q["kind"] == "graded"], a)
 
+    def test_theme_tokens_restyle_the_svg(self):
+        import emit_svg
+        m, arch = load("qbr-c-level")
+        mind, _ = render.build_graph_ir(m, arch)
+        self.assertEqual(mind["theme"], "professional")         # default = the old constants (#64)
+        prof = emit_svg.build_mindmap_svg(mind)
+        next(d for d in m["deliverables"] if d["type"] == "mindmap")["theme"] = "scientific"
+        mind_s, _ = render.build_graph_ir(m, arch)
+        sci = emit_svg.build_mindmap_svg(mind_s)
+        self.assertNotEqual(prof, sci)                          # one YAML file restyles the deliverable
+        self.assertIn("#0B3D5C", sci)                           # scientific accent from the tokens
+        self.assertIn("#B86B00", sci)                           # amber grounding signal is reserved
+
+    def test_deck_ir_stamps_theme(self):
+        m, arch = load("qbr-c-level")
+        deck, _ = render.build_deck_ir(m, arch)
+        self.assertEqual(deck["theme"], "professional")
+        next(d for d in m["deliverables"] if d["type"] == "presentation")["theme"] = "scientific"
+        deck_s, _ = render.build_deck_ir(m, arch)
+        self.assertEqual(deck_s["theme"], "scientific")
+
     def test_mindmap_orientation_changes_layout(self):
         import emit_svg
         m, arch = load("qbr-c-level")
