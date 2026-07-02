@@ -11,6 +11,9 @@ Deliberate, safer-for-a-manifest deviations from YAML 1.1:
   * yes/no/on/off are NOT booleans (avoids the "Norway problem"); only true/false are.
   * unquoted decimals/exponents stay strings (versions like 1.22 are not coerced).
 Out of scope: folded `>` scalars, anchors, tags, multi-document streams.
+What the subset can't parse fails LOUDLY (a line-numbered ValueError), never silently (#55): a
+flow collection wrapped across lines and a duplicated mapping key both raise — the manifest is
+the one file whose integrity the grounding model depends on.
 """
 
 import re
@@ -71,6 +74,29 @@ def _split_top(text, sep=","):
     return parts
 
 
+def _flow_unbalanced(s):
+    """True iff s opens a flow collection that does not close on the same line (quote-aware, #55)."""
+    if not s or s[0] not in "[{":
+        return False
+    depth, q, i = 0, None, 0
+    while i < len(s):
+        c = s[i]
+        if q:
+            if c == "\\" and q == '"':
+                i += 2
+                continue
+            if c == q:
+                q = None
+        elif c in "\"'":
+            q = c
+        elif c in "[{":
+            depth += 1
+        elif c in "]}":
+            depth -= 1
+        i += 1
+    return depth != 0
+
+
 _DQ_ESCAPES = {"n": "\n", "t": "\t", "r": "\r", "0": "\0",
                '"': '"', "\\": "\\", "/": "/", " ": " "}
 
@@ -101,7 +127,10 @@ def _scalar(s):
         if inner:
             for pair in _split_top(inner):
                 k, _, v = pair.partition(":")
-                d[k.strip()] = _scalar(v.strip())
+                k = k.strip()
+                if k in d:
+                    raise ValueError(f"duplicate key '{k}' in a flow mapping")
+                d[k] = _scalar(v.strip())
         return d
     if len(s) >= 2 and s[0] == '"' and s[-1] == '"':
         return _unescape_double(s[1:-1])
@@ -192,6 +221,11 @@ def load_yaml(text):
                 break
             key, _, val = _strip_comment(line.strip()).partition(":")
             key, val = key.strip(), val.strip()
+            if key in result:
+                raise ValueError(f"line {pos[0] + 1}: duplicate key '{key}'")
+            if _flow_unbalanced(val):
+                raise ValueError(f"line {pos[0] + 1}: flow collection is not closed on one line "
+                                 "(multiline flow is not supported)")
             pos[0] += 1
             if val in ("|", "|-", "|+"):
                 result[key] = parse_block_scalar(indent, val[1:])
@@ -228,7 +262,11 @@ def load_yaml(text):
             if re.match(r"[A-Za-z0-9_]+\s*:(\s|$)", content):
                 items.append(parse_map(key_col, first_line=" " * key_col + content))
             else:
-                items.append(_scalar(_strip_comment(content.strip())))
+                item = _strip_comment(content.strip())
+                if _flow_unbalanced(item):
+                    raise ValueError(f"line {pos[0] + 1}: flow collection is not closed on one line "
+                                     "(multiline flow is not supported)")
+                items.append(_scalar(item))
                 pos[0] += 1
         return items
 

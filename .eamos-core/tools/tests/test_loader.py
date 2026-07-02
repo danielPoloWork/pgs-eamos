@@ -43,6 +43,29 @@ class TestSubset(unittest.TestCase):
         with self.assertRaises(ValueError):
             yamlmini.load_yaml("a:\n\tb: 1\n")
 
+    def test_multiline_flow_sequence_rejected(self):
+        # Wrapping a long flow list is the natural editor reflex — it must raise, not truncate (#55).
+        with self.assertRaisesRegex(ValueError, r"line 1: flow collection is not closed"):
+            yamlmini.load_yaml("order: [a, b,\n  c]\n")
+
+    def test_multiline_flow_list_item_rejected(self):
+        with self.assertRaisesRegex(ValueError, r"line 2: flow collection is not closed"):
+            yamlmini.load_yaml("rows:\n  - { metric_binding: kpi.arr,\n      target_binding: kpi.arr_target }\n")
+
+    def test_duplicate_key_rejected(self):
+        # A duplicated ledger cell must raise, not silently last-win (#55).
+        with self.assertRaisesRegex(ValueError, r"line 3: duplicate key 'k'"):
+            yamlmini.load_yaml("inputs:\n  k: 1\n  k: 2\n")
+
+    def test_duplicate_key_in_flow_mapping_rejected(self):
+        with self.assertRaisesRegex(ValueError, r"duplicate key 'a' in a flow mapping"):
+            yamlmini.load_yaml("m: { a: 1, a: 2 }\n")
+
+    def test_balanced_flow_on_one_line_still_loads(self):
+        d = yamlmini.load_yaml('order: [a, b, c]\ncell: { k: "wrapped [not] a flow", n: 1 }\n')
+        self.assertEqual(d["order"], ["a", "b", "c"])
+        self.assertEqual(d["cell"]["k"], "wrapped [not] a flow")
+
 
 class TestReferenceManifests(unittest.TestCase):
     def test_parse(self):
