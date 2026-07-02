@@ -111,6 +111,19 @@ class TestTeeth(unittest.TestCase):
         m["classification"] = "public"
         self.assertIn("confidentiality", run_gates(m))
 
+    def test_typoed_provenance_fails_closed(self):
+        m = load("qbr-c-level")
+        m["inputs"]["kpi.arr"]["provenance"] = "asumed"     # one keystroke from silent fabrication (#53)
+        ids = run_gates(m)
+        self.assertIn("grounding-labeled", ids)
+        msgs = [msg for g, msg in eamos_lint.failures if g == "grounding-labeled"]
+        self.assertTrue(any("not one of sourced|assumed" in msg for msg in msgs))
+
+    def test_missing_provenance_fails_closed(self):
+        m = load("qbr-c-level")
+        del m["inputs"]["kpi.arr"]["provenance"]
+        self.assertIn("grounding-labeled", run_gates(m))
+
     def test_empty_manifest_fails_completeness_per_required_section(self):
         m = load("qbr-c-level")
         m["content"], m["inputs"] = {}, {}          # an all-empty manifest must not ship green (#52)

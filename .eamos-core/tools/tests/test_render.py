@@ -73,6 +73,33 @@ class TestGrounding(unittest.TestCase):
         arr = next(b["value"] for s in deck["slides"] for b in s["blocks"] if b.get("label") == "ARR")
         self.assertEqual(arr, "12.4M€")                        # sourced -> no marker
 
+    def test_invalid_provenance_renders_labeled(self):
+        m, arch = load("qbr-c-level")
+        m["inputs"]["kpi.arr"]["provenance"] = "asumed"        # typo must fail closed (#53)
+        deck, acc = render.build_deck_ir(m, arch)
+        arr = next(b["value"] for s in deck["slides"] for b in s["blocks"] if b.get("label") == "ARR")
+        self.assertIn("⟨", arr)                                # labeled, not plain
+        self.assertIn("kpi.arr", acc["invalid_provenance"])
+        self.assertIn("kpi.arr", {a["binding"] for a in deck["review_appendix"]})
+
+    def test_invalid_provenance_fails_closed_across_projections(self):
+        m, arch = load("qbr-c-level")
+        m["inputs"]["kpi.arr"]["provenance"] = "Assumed"       # wrong case is not the enum (#53)
+        info, _ = render.build_infographic_ir(m, arch)
+        self.assertTrue(next(s for s in info["stats"] if s["label"] == "ARR")["assumed"])
+        data, _ = render.build_data_ir(m, arch)
+        self.assertTrue(next(r for r in data["rows"] if r["label"] == "ARR")["assumed"])
+        quiz, _ = render.build_quiz_ir(m, arch)
+        q = next(q for q in quiz["questions"] if q["kind"] == "graded" and "ARR" in q["q"])
+        self.assertTrue(q["assumed"])
+
+    def test_invalid_provenance_fails_closed_in_topology(self):
+        m, arch = load("vendor-prework")
+        m["inputs"]["sys.platform"]["provenance"] = "asumed"   # typo must fail closed (#53)
+        topo, acc = render.build_topology_ir(m, arch)
+        self.assertTrue(next(n for n in topo["nodes"] if n["id"] == "platform")["assumed"])
+        self.assertIn("sys.platform", acc["invalid_provenance"])
+
 
 class TestDecisionContract(unittest.TestCase):
     def test_decision_contract_renders_through_md(self):
