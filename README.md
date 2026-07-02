@@ -158,8 +158,13 @@ milestone log are in [ROADMAP.md](ROADMAP.md).
 ## Repository
 
 The full agent contract is [AGENTS.md](AGENTS.md). All factory machinery lives under
-`.eamos-core/` — a consumer ignores it with a single line. How to contribute (and the exhaustive-PR
-bar): [CONTRIBUTING.md](CONTRIBUTING.md).
+`.eamos-core/` — a consumer ignores it with a single line.
+
+**Contributing:** how to contribute (and the exhaustive-PR bar) is in
+[CONTRIBUTING.md](CONTRIBUTING.md); bugs and feature requests go through the
+[issue forms](https://github.com/danielPoloWork/pgs-eamos/issues/new/choose) (a bug needs the
+manifest + the exact command; a feature names its axis). We follow the
+[Contributor Covenant](CODE_OF_CONDUCT.md); security reports: [SECURITY.md](SECURITY.md).
 
 ## Credits
 

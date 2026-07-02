@@ -1,0 +1,67 @@
+name: Bug report
+description: Something renders wrong, a gate lies, or a tool crashes.
+labels: [bug]
+assignees: [danielPoloWork]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for battle-testing EAMOS. Every EAMOS bug needs two things to be reproducible:
+        **the manifest** (or a minimal YAML repro) and **the exact command**. The form below
+        mirrors the repo's own exhaustive-PR bar — the more complete it is, the faster the fix.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: One or two sentences. What did you see?
+    validations:
+      required: true
+  - type: textarea
+    id: manifest
+    attributes:
+      label: Manifest / minimal YAML repro
+      description: >
+        The meeting manifest that triggers the bug — trimmed to the smallest YAML that still
+        reproduces it. Redact real numbers freely; the shape is what matters.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command(s)
+      description: Copy-paste the command(s) you ran, from `.eamos-core/`.
+      render: sh
+      placeholder: python tools/render.py orchestrator/examples/qbr-c-level.yaml --out build/deck-ir.json
+    validations:
+      required: true
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: Expected vs actual
+      description: What should have happened (which gate/output), and what happened instead. Paste the full output — including any traceback.
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      description: Platform is mandatory — a whole class of bugs (encoding, paths) is OS-specific.
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.12.4 (python --version)"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: EAMOS version / commit
+      placeholder: "v0.1.0, or the output of: git rev-parse --short HEAD"
