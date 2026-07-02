@@ -125,21 +125,31 @@ def select_questions(classification, tree, routing):
     """Phase-C adaptive selection (RFC-0003, #28). Deterministic, pure (no IO/clock/randomness):
     resolve the interview DEPTH from the classification (the `by_complexity` base, raised to
     `architecture` if an `escalate_to_architecture` rule matches), then return the `common` + the
-    cluster's questions whose `level` is at or below that depth, in level order. Returns (depth, [q])."""
+    cluster's questions whose `level` is at or below that depth, in level order.
+    Fails SHALLOW (#57): a missing/unknown complexity starts at the shallowest level — garbage in
+    must buy the cheapest interview, not the deepest (progressive disclosure, RFC-0003 §2.2) — and
+    says so in the returned note. Returns (depth, [questions], note)."""
     levels = tree.get("levels", []) or []
     cluster = (classification or {}).get("cluster")
-    depth = (routing.get("by_complexity", {}) or {}).get((classification or {}).get("complexity"))
+    comp = (classification or {}).get("complexity")
+    depth = (routing.get("by_complexity", {}) or {}).get(comp)
     for rule in (routing.get("escalate_to_architecture", []) or []):
         if (rule.get("cluster") == cluster
                 and rule.get("decision_risk") == (classification or {}).get("decision_risk")):
             depth = "architecture"
             break
-    max_i = levels.index(depth) if depth in levels else (len(levels) - 1 if levels else 0)
+    note = ""
+    if depth not in levels:
+        depth = levels[0] if levels else None
+        what = "missing" if comp is None else f"'{comp}' is unknown"
+        note = (f"complexity {what} — starting at the shallowest depth; "
+                "classify first (Phase B, #27) for a deeper route")
+    max_i = levels.index(depth) if depth in levels else 0
     picked = list(tree.get("common", []) or []) + list((tree.get("clusters", {}) or {}).get(cluster, []) or [])
     sel = [q for q in picked if isinstance(q, dict) and q.get("level") in levels
            and levels.index(q["level"]) <= max_i]
     sel.sort(key=lambda q: levels.index(q["level"]))   # stable: keep authoring order within a level
-    return depth, sel
+    return depth, sel, note
 
 
 def questions_op(manifest_path):
@@ -153,9 +163,18 @@ def questions_op(manifest_path):
         print("intake --questions: the manifest has no discovery_intake.classification "
               "(classify it first — Phase B, #27).")
         return 1
-    depth, sel = select_questions(cls, render.load_questions(), render.load_routing())
+    allowed = render.load_classification().get("cluster", []) or []
+    if allowed and cls.get("cluster") not in allowed:
+        # An out-of-taxonomy cluster would silently yield only the common questions (#57).
+        print(f"intake --questions: classification.cluster '{cls.get('cluster')}' is not in the "
+              f"taxonomy ({', '.join(allowed)}) — fix discovery_intake.classification (Phase B, #27).")
+        return 1
+    depth, sel, note = select_questions(cls, render.load_questions(), render.load_routing())
     out = [f"# Targeted questions — {cls.get('cluster')} "
-           f"(complexity {cls.get('complexity')} · decision-risk {cls.get('decision_risk')} · depth: {depth})", ""]
+           f"(complexity {cls.get('complexity')} · decision-risk {cls.get('decision_risk')} · depth: {depth})"]
+    if note:
+        out.append(f"> {note}")
+    out.append("")
     out += [f"- [{q.get('level')}] {q.get('ask')}" for q in sel]
     sys.stdout.write("\n".join(out) + "\n")
     return 0
