@@ -12,6 +12,8 @@ import json
 import os
 import sys
 
+import _cli  # utf8_stdio (#54)
+
 # Template chrome in the deck's output language (the section labels, not the content).
 LABELS = {
     "it": {"target": "target", "risk": "Rischio", "ask": "Richiesta", "decision": "Decisione",
@@ -115,6 +117,7 @@ def render_quiz_md(ir):
 
 
 def main():
+    _cli.utf8_stdio()   # Windows: piped stdout must stay UTF-8 (#54)
     ap = argparse.ArgumentParser(description="Emit Markdown from a deck-IR or quiz-IR.")
     ap.add_argument("deck_ir", help="path to a deck-IR or quiz-IR JSON file")
     ap.add_argument("--out", help="output path (default: stdout)")

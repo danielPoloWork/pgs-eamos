@@ -18,6 +18,7 @@ import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
+import _cli      # noqa: E402  (utf8_stdio, #54)
 import yamlmini  # noqa: E402
 import render    # noqa: E402  (reuse resolve_text + the ledger model)
 
@@ -190,6 +191,7 @@ def _write_store(store, path):
 
 
 def main():
+    _cli.utf8_stdio()   # Windows: piped stdout must stay UTF-8 (#54)
     ap = argparse.ArgumentParser(description="EAMOS series store — close/open a recurring meeting.")
     ap.add_argument("op", choices=["close", "open"])
     ap.add_argument("manifest")

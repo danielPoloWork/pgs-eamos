@@ -16,6 +16,8 @@ import json
 import os
 import sys
 
+import _cli  # utf8_stdio (#54)
+
 AMBER = (0xB8, 0x6B, 0x00)
 MUTED = (0x70, 0x70, 0x70)
 
@@ -121,6 +123,7 @@ def build_docx(ir, out_path):
 
 
 def main():
+    _cli.utf8_stdio()   # Windows: piped stdout must stay UTF-8 (#54)
     ap = argparse.ArgumentParser(description="Emit a .docx pre-read from a deck-IR.")
     ap.add_argument("deck_ir", help="path to a deck-IR JSON file")
     ap.add_argument("--out", required=True, help="output .docx path")

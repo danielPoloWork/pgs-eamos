@@ -19,6 +19,7 @@ import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
+import _cli      # noqa: E402  (utf8_stdio, #54)
 import yamlmini  # noqa: E402
 
 CORE = os.path.dirname(TOOLS)
@@ -615,6 +616,7 @@ def build_topology_ir(manifest, archetype=None, altitude=None, function=None):
 
 
 def main():
+    _cli.utf8_stdio()   # Windows: piped stdout must stay UTF-8 (#54)
     ap = argparse.ArgumentParser(description="Render an EAMOS meeting manifest into an IR.")
     ap.add_argument("manifest", help="path to a meeting manifest (e.g. examples/qbr-c-level.yaml)")
     ap.add_argument("--out", help="output path for the IR JSON (default: stdout)")

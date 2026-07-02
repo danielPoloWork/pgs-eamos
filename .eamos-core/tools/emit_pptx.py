@@ -16,6 +16,8 @@ import json
 import os
 import sys
 
+import _cli  # utf8_stdio (#54)
+
 NAVY = (0x1E, 0x27, 0x61)      # title
 BODY = (0x2B, 0x2B, 0x2B)      # body text
 AMBER = (0xB8, 0x6B, 0x00)     # assumed / to-verify
@@ -135,6 +137,7 @@ def build_pptx(ir, out_path):
 
 
 def main():
+    _cli.utf8_stdio()   # Windows: piped stdout must stay UTF-8 (#54)
     ap = argparse.ArgumentParser(description="Emit a .pptx board deck from a deck-IR.")
     ap.add_argument("deck_ir", help="path to a deck-IR JSON file")
     ap.add_argument("--out", required=True, help="output .pptx path")

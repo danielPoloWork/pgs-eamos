@@ -18,6 +18,8 @@ import json
 import os
 import sys
 
+import _cli  # utf8_stdio (#54)
+
 # Per visual_style palette (background, accent, body, amber, muted, card). Unknown styles fall back
 # to professional. Layout is shared; only the palette/theme changes (RFC-0002 §11-1).
 THEMES = {
@@ -237,6 +239,7 @@ def build_topology_svg(ir):
 
 
 def main():
+    _cli.utf8_stdio()   # Windows: piped stdout must stay UTF-8 (#54)
     ap = argparse.ArgumentParser(description="Emit an SVG from an infographic-IR, graph-IR, or topology-IR.")
     ap.add_argument("ir_json", help="path to an infographic-IR, graph-IR (mindmap), or topology-IR JSON file")
     ap.add_argument("--out", help="output .svg path (default: stdout)")

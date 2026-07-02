@@ -24,6 +24,7 @@ import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
+import _cli      # noqa: E402  (utf8_stdio, #54)
 import yamlmini  # noqa: E402
 import render    # noqa: E402
 import series    # noqa: E402
@@ -214,6 +215,7 @@ def followup(manifest_path, outcomes_path, store_path, out):
 
 
 def main():
+    _cli.utf8_stdio()   # Windows: piped stdout must stay UTF-8 (#54)
     ap = argparse.ArgumentParser(description="EAMOS facilitate / follow-up.")
     ap.add_argument("op", choices=["prep", "followup"])
     ap.add_argument("manifest")
