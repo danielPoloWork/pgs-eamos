@@ -47,7 +47,76 @@ A small composable grammar (RFC §3), not a catalogue of meeting types:
 
 A QBR is not a type — it is `review @ c-level × finance × {context}`. The render path is
 **deterministic**: the meeting manifest renders into a typed **deck-IR**, gates run on the IR, and
-the `pptx`/`docx`/`xlsx` skills are only the cosmetic last hop (RFC §5).
+the `pptx`/`docx`/`xlsx` skills are only the cosmetic last hop (RFC §5). How context flows through
+that path, station by station: [the context engine](#the-context-engine). Every tool and flag:
+[the CLI reference](.eamos-core/docs/cli.md).
+
+## The context engine
+
+EAMOS never passes your meeting context through a prompt — it **compiles** it. Context moves
+through four typed stations, and each hop is validated by a gate:
+
+1. **The inputs ledger** (`inputs:` in the manifest) — every number and fact you provide is a
+   typed cell with `label`, `value`, `source`, and `provenance: sourced | assumed`. Prose never
+   contains a number; it binds a cell with `{{key}}`. `tools/intake.py` builds this ledger from
+   pasted CSVs, a prior instance's series store, or an uploaded deck — zero hand-entry.
+2. **The meeting manifest** — the ledger plus the four axes (archetype × altitude × function ×
+   company context) and the authored content. One file, one source of truth, validated against a
+   schema (`manifest-schema`) and confirmed by a human before anything renders
+   (`manifest-confirmed`).
+3. **The IR** (`tools/render.py`) — a deterministic, versioned JSON projection per deliverable
+   (deck, infographic, KPI table, mind map, quiz, topology) over the *same* ledger, so a number
+   cannot diverge between the deck and the one-pager. Sourced values render plain; anything else
+   renders labeled `⟨… — to verify⟩` (fail-closed) and is collected into a review appendix.
+4. **The gates** (`tools/eamos_lint.py`) — structural checks on the IR and the manifest
+   (completeness, labeled grounding, audience fit, confidentiality, …). Only a green IR reaches
+   the cosmetic last hop (the `emit_*.py` tools — Markdown, PPTX, DOCX, SVG, XLSX — themed by
+   data tokens).
+
+Same manifest in, same bytes out — the CI proves it on every push, on Linux and Windows.
+
+### Sourced vs assumed, visibly
+
+One cell of the reference manifest is missing real material, so it is marked `assumed`:
+
+```yaml
+kpi.churn_q3:
+  value: "~4.2%"
+  provenance: assumed        # missing material, filled professionally — never silently
+  assumption: "stimato dal trend H1; placeholder — adattare e verificare prima della sala"
+  review_required: true
+```
+
+Every deliverable renders it **labeled, never plain** — this line is from the rendered deck:
+
+```text
+- **Churn logo Q3**: ⟨~4.2% — da verificare⟩
+```
+
+The `⟨…⟩` marker survives into the deck, the pre-read, the infographic (amber), the sheet
+(highlighted), and the "verify before the room" appendix — and the `grounding-labeled` gate turns
+red if a label or an appendix entry is missing. A typo'd provenance is treated as assumed
+(fail-closed), so a value is plain only when it is *explicitly* sourced.
+
+## Try it in 60 seconds
+
+From a clone (the repo is private until GTM — see the installer note below for the bundle path):
+
+```sh
+git clone https://github.com/danielPoloWork/pgs-eamos.git
+cd pgs-eamos/.eamos-core
+
+python tools/render.py orchestrator/examples/qbr-c-level.yaml --out build/deck-ir.json
+python tools/eamos_lint.py orchestrator/examples/qbr-c-level.yaml
+python tools/emit_md.py build/deck-ir.json --out build/deck.md
+python tools/facilitate.py prep orchestrator/examples/qbr-c-level.yaml --minutes 60
+```
+
+That renders the reference QBR into a gated deck-IR, lints it (all gates green), emits the
+Markdown deck, and prints a timeboxed facilitation script. **No dependencies — stdlib Python**
+(3.12+). `pip install python-pptx` only if you want the `.pptx` hop
+(`python tools/emit_pptx.py build/deck-ir.json --out build/deck.pptx`). The full tool-by-tool
+reference: [`.eamos-core/docs/cli.md`](.eamos-core/docs/cli.md).
 
 ## The moat
 
@@ -79,11 +148,12 @@ overwrites). Double-click `setup.command` (macOS) or `setup.bat` (Windows).
 
 ## Status
 
-Early. The design of record is [RFC-0001](.eamos-core/docs/rfc/0001-eamos-meeting-os.md) and
-[RFC-0002](.eamos-core/docs/rfc/0002-deliverable-catalogue-and-ir-families.md); the plan is
-[ROADMAP.md](ROADMAP.md). **M1** (the QBR @ C-level reference) renders end-to-end and
-deterministically — manifest → deck-IR → Markdown deck + `.pptx` board deck, gates green;
-**M2** (the composable archetype grammar) is in progress.
+Pre-1.0, feature-complete through **M8**: the whole loop — manifest → IR → gates → deck,
+pre-read, infographic, KPI sheet, quiz, topology — renders end-to-end and deterministically, with
+the series store, intake, facilitation, the advisor, and the guided installer shipped. The design
+of record is [RFC-0001](.eamos-core/docs/rfc/0001-eamos-meeting-os.md) and
+[RFC-0002](.eamos-core/docs/rfc/0002-deliverable-catalogue-and-ir-families.md); the plan and the
+milestone log are in [ROADMAP.md](ROADMAP.md).
 
 ## Repository
 
