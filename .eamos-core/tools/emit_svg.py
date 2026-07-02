@@ -130,7 +130,22 @@ def _trunc(s, n):
 
 
 def build_mindmap_svg(ir):
-    """A deterministic horizontal mind map from a graph-IR: root → branches → leaves."""
+    """A deterministic mind map from a graph-IR: root → branches → leaves. The `orientation`
+    param picks the layout (#63) — horizontal (root left, reading rows) or vertical (root top,
+    one column per branch). Both are pure functions of the branch order (RFC-0002 §11-1)."""
+    if ir.get("orientation") == "vertical":
+        return _mindmap_vertical(ir)
+    return _mindmap_horizontal(ir)
+
+
+def _box(parts, x, y, w, text, fill, txt, size=14, bold=False):
+    parts.append(f'<rect x="{x}" y="{y - 17}" width="{w}" height="34" rx="8" fill="{fill}"/>')
+    parts.append(f'<text x="{x + 12}" y="{y + 5}" font-family="Calibri, Arial, sans-serif" '
+                 f'font-size="{size}" font-weight="{"bold" if bold else "normal"}" '
+                 f'fill="{txt}">{esc(text)}</text>')
+
+
+def _mindmap_horizontal(ir):
     bg, accent, body, amber, muted, card = THEMES["professional"]
     branches = ir.get("branches", [])
     row_h = 46
@@ -141,25 +156,19 @@ def build_mindmap_svg(ir):
              f'<rect width="{W}" height="{H}" fill="{bg}"/>']
     root_y = H // 2
 
-    def box(x, y, w, text, fill, txt, size=14, bold=False):
-        parts.append(f'<rect x="{x}" y="{y - 17}" width="{w}" height="34" rx="8" fill="{fill}"/>')
-        parts.append(f'<text x="{x + 12}" y="{y + 5}" font-family="Calibri, Arial, sans-serif" '
-                     f'font-size="{size}" font-weight="{"bold" if bold else "normal"}" '
-                     f'fill="{txt}">{esc(text)}</text>')
-
     def link(x1, y1, x2, y2):
         mx = (x1 + x2) // 2
         parts.append(f'<path d="M{x1} {y1} C{mx} {y1} {mx} {y2} {x2} {y2}" stroke="{muted}" '
                      f'fill="none" stroke-width="1.5"/>')
 
-    box(rx, root_y, 320, _trunc(ir.get("root", ""), 46), accent, "#FFFFFF", 15, True)
+    _box(parts, rx, root_y, 320, _trunc(ir.get("root", ""), 46), accent, "#FFFFFF", 15, True)
     y = 40
     for b in branches:
         leaves = b.get("leaves", []) or []
         span = max(1, len(leaves)) * row_h
         by = y + span // 2
         link(rx + 320, root_y, bx, by)
-        box(bx, by, 300, _trunc(b.get("label", ""), 40), card, accent, 14, True)
+        _box(parts, bx, by, 300, _trunc(b.get("label", ""), 40), card, accent, 14, True)
         ly = y + row_h // 2
         for leaf in leaves:
             link(bx + 300, by, lx, ly)
@@ -168,6 +177,41 @@ def build_mindmap_svg(ir):
                          f'font-size="13" fill="{col}">{esc(_trunc(leaf, 52))}</text>')
             ly += row_h
         y += span
+    parts.append("</svg>")
+    return "\n".join(parts) + "\n"
+
+
+def _mindmap_vertical(ir):
+    """The vertical layout (#63): root on top, one column per branch, leaves stacked beneath.
+    Deterministic like its horizontal twin — a pure function of the branch order."""
+    bg, accent, body, amber, muted, card = THEMES["professional"]
+    branches = ir.get("branches", [])
+    col_w, box_w, row_h, m = 320, 300, 30, 30
+    n = max(1, len(branches))
+    depth = max([len(b.get("leaves", []) or []) for b in branches] or [0])
+    W = m * 2 + n * col_w - (col_w - box_w)
+    H = 180 + depth * row_h + 40
+    parts = [f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">',
+             f'<rect width="{W}" height="{H}" fill="{bg}"/>']
+
+    def vlink(x1, y1, x2, y2):
+        my = (y1 + y2) // 2
+        parts.append(f'<path d="M{x1} {y1} C{x1} {my} {x2} {my} {x2} {y2}" stroke="{muted}" '
+                     f'fill="none" stroke-width="1.5"/>')
+
+    root_cx = W // 2
+    _box(parts, root_cx - 160, 57, 320, _trunc(ir.get("root", ""), 46), accent, "#FFFFFF", 15, True)
+    for i, b in enumerate(branches):
+        x = m + i * col_w
+        bcx = x + box_w // 2
+        vlink(root_cx, 74, bcx, 123)
+        _box(parts, x, 140, box_w, _trunc(b.get("label", ""), 40), card, accent, 14, True)
+        ly = 180
+        for leaf in b.get("leaves", []) or []:
+            col = amber if "⟨" in str(leaf) else body
+            parts.append(f'<text x="{x + 12}" y="{ly + 5}" font-family="Calibri, Arial, sans-serif" '
+                         f'font-size="13" fill="{col}">{esc(_trunc(leaf, 40))}</text>')
+            ly += row_h
     parts.append("</svg>")
     return "\n".join(parts) + "\n"
 
