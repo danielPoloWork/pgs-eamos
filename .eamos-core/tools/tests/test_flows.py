@@ -328,6 +328,19 @@ class TestUserErrors(unittest.TestCase):
         finally:
             render.load_archetype = orig
 
+    def test_render_requires_archetype_explicitly(self):
+        # No silent 'review' default (#59): render must refuse a manifest without an archetype.
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "m.yaml")
+            with open(p, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write("identity:\n  audience_altitude: c-level\nobjective: x\n")
+            out = subprocess.run([sys.executable, os.path.join(TOOLS, "render.py"), p],
+                                 capture_output=True, text=True)
+            self.assertNotEqual(out.returncode, 0)
+            self.assertIn("identity.archetype is required", out.stderr)
+            self.assertNotIn("Traceback", out.stderr)
+
     def test_empty_identity_preps_without_traceback(self):
         with tempfile.TemporaryDirectory() as d:
             p = os.path.join(d, "m.yaml")
