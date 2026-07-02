@@ -11,7 +11,8 @@ Gates:
   completeness               — every archetype-required section is present in the deck-IR, has
                                substantive content blocks, and carries a real (non-id) title.
   grounding-labeled          — every binding resolves; every assumed value is labeled and listed
-                               in the review appendix with an assumption + review_required flag.
+                               in the review appendix with an assumption + review_required flag;
+                               every provenance is in the enum (anything else fails closed, #53).
   audience-fit               — the rendered deck respects the altitude slide budget.
   deliverable-params-in-bounds — requested deliverable params are within the archetype's bounds.
   no-action-considered       — any solution space (an option_list) includes the no-action baseline.
@@ -63,6 +64,10 @@ def gate_completeness(deck_ir, archetype):
 def gate_grounding_labeled(deck_ir, acc, ledger):
     for key in sorted(acc["unresolved"]):
         fail("grounding-labeled", f"binding '{{{{{key}}}}}' does not resolve to any inputs-ledger cell")
+    for key in sorted(acc.get("invalid_provenance", ())):   # fail closed (#53): rendered as assumed
+        prov = (ledger.get(key) or {}).get("provenance")
+        fail("grounding-labeled",
+             f"cell '{key}' provenance '{prov}' is not one of sourced|assumed")
     appendix_keys = {a["binding"] for a in deck_ir.get("review_appendix", [])}
     for key in sorted(acc["assumed"]):
         cell = ledger.get(key, {})

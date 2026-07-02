@@ -33,25 +33,38 @@ ROUTING = os.path.join(CORE, "orchestrator", "os", "intake", "routing.yaml")
 BIND_RE = re.compile(r"\{\{\s*([a-z][a-z0-9_.]*)\s*\}\}")
 # The "verify before the room" label for an assumed value, by output language (RFC-0001 §6).
 VERIFY_LABEL = {"it": "da verificare", "en": "to verify", "es": "por verificar", "fr": "à vérifier"}
+# The provenance enum. Anything else — a typo, a missing field, a future value — is treated as
+# assumed (fail closed, #53) and flagged for the grounding gate: only the explicit `sourced`
+# may render plain.
+VALID_PROVENANCE = {"sourced", "assumed"}
 
 
 def _new_acc():
-    return {"used": set(), "assumed": {}, "unresolved": set()}
+    return {"used": set(), "assumed": {}, "unresolved": set(), "invalid_provenance": set()}
 
 
 def _mark(value, lang):
     return f"⟨{value} — {VERIFY_LABEL.get(lang, VERIFY_LABEL['en'])}⟩"
 
 
+def _cell_assumed(key, cell, acc):
+    """Fail-closed provenance check (#53): True unless the cell is explicitly `sourced`.
+    A provenance outside the enum is additionally recorded for the grounding gate."""
+    prov = cell.get("provenance")
+    if prov not in VALID_PROVENANCE:
+        acc["invalid_provenance"].add(key)
+    return prov != "sourced"
+
+
 def resolve_value(key, ledger, acc, lang):
-    """Render one ledger cell: plain if sourced, labeled if assumed; records provenance in acc."""
+    """Render one ledger cell: plain iff sourced, labeled otherwise; records provenance in acc."""
     cell = ledger.get(key)
     if not isinstance(cell, dict):
         acc["unresolved"].add(key)
         return f"⟨{key}: ??⟩"
     acc["used"].add(key)
     value = "" if cell.get("value") is None else str(cell.get("value"))
-    if cell.get("provenance") == "assumed":
+    if _cell_assumed(key, cell, acc):
         acc["assumed"][key] = cell
         return _mark(value, lang)
     return value
@@ -100,8 +113,8 @@ def scorecard_ledger(manifest):
             except (AttributeError, ValueError, TypeError):
                 ok = False
                 break
-            if wcell.get("provenance") == "assumed" or scell.get("provenance") == "assumed":
-                assumed = True
+            if wcell.get("provenance") != "sourced" or scell.get("provenance") != "sourced":
+                assumed = True                     # fail closed (#53): only explicit `sourced` counts
         total_key = opt.get("total")
         if not ok or not total_key:
             continue                       # misconfigured/missing -> leave it; the binding surfaces it
@@ -386,7 +399,7 @@ def build_infographic_ir(manifest, archetype, altitude=None, function=None):
                     stats.append({"label": mk, "value": "??", "assumed": False})
                     continue
                 acc["used"].add(mk)                       # register provenance for the appendix
-                assumed = cell.get("provenance") == "assumed"
+                assumed = _cell_assumed(mk, cell, acc)    # fail closed (#53)
                 if assumed:
                     acc["assumed"][mk] = cell
                 stat = {"label": cell.get("label", mk),   # raw value + a flag; the SVG colors amber
@@ -448,7 +461,7 @@ def build_data_ir(manifest, archetype, altitude=None, function=None):
                 rows.append({"label": mk, "value": "??", "target": "", "source": "", "assumed": False})
                 continue
             acc["used"].add(mk)
-            assumed = cell.get("provenance") == "assumed"
+            assumed = _cell_assumed(mk, cell, acc)        # fail closed (#53)
             if assumed:
                 acc["assumed"][mk] = cell
             rows.append({
@@ -536,7 +549,7 @@ def build_quiz_ir(manifest, archetype, altitude=None, function=None):
     for key, cell in ledger.items():
         if not (key.startswith("kpi.") and isinstance(cell, dict)):
             continue
-        assumed = cell.get("provenance") == "assumed"
+        assumed = _cell_assumed(key, cell, acc)           # fail closed (#53)
         if assumed:
             acc["assumed"][key] = cell
         questions.append({"kind": "graded", "q": f"{stem} «{cell.get('label', key)}»?",
@@ -577,7 +590,7 @@ def build_topology_ir(manifest, archetype=None, altitude=None, function=None):
         key = nd.get("label")
         label = resolve_value(key, ledger, acc, lang) if key else str(nd.get("id", ""))
         cell = ledger.get(key) if isinstance(ledger, dict) else None
-        assumed = isinstance(cell, dict) and cell.get("provenance") == "assumed"
+        assumed = isinstance(cell, dict) and _cell_assumed(key, cell, acc)   # fail closed (#53)
         nodes.append({"id": nd.get("id"), "label": label, "kind": nd.get("kind", ""), "assumed": bool(assumed)})
 
     edges = []
@@ -587,7 +600,7 @@ def build_topology_ir(manifest, archetype=None, altitude=None, function=None):
         if e.get("label"):
             label = resolve_value(e["label"], ledger, acc, lang)
             cell = ledger.get(e["label"])
-            if isinstance(cell, dict) and cell.get("provenance") == "assumed":
+            if isinstance(cell, dict) and _cell_assumed(e["label"], cell, acc):   # fail closed (#53)
                 assumed = True
         edges.append({"from": e.get("from"), "to": e.get("to"),
                       "pattern": e.get("pattern", ""), "label": label, "assumed": assumed})
