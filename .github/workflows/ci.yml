@@ -2,6 +2,7 @@ name: ci
 
 # The quality bar EAMOS imposes on its output, imposed first on itself (AGENTS.md §8).
 # Dependency-free: stdlib Python only, so the gates run anywhere with no install step.
+# Both legs matter: the maintainer's dev platform is Windows (#54), the runners' default is Linux.
 on:
   pull_request:
   push:
@@ -12,7 +13,13 @@ permissions:
 
 jobs:
   gates:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash   # one shell on both legs; pipes pass raw bytes (UTF-8) unmangled
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -32,6 +39,14 @@ jobs:
         run: |
           python .eamos-core/tools/render.py .eamos-core/orchestrator/examples/qbr-c-level.yaml --out build/a.json
           python .eamos-core/tools/render.py .eamos-core/orchestrator/examples/qbr-c-level.yaml --out build/b.json
-          cmp build/a.json build/b.json
+          python -c "import sys; sys.exit(open('build/a.json','rb').read() != open('build/b.json','rb').read())"
           python .eamos-core/tools/emit_md.py build/a.json --out build/deck.md
           echo "render-smoke: deterministic ✓"
+
+      - name: Piped-stdout smoke (UTF-8 grounding markers must survive a pipe, #54)
+        run: |
+          python .eamos-core/tools/facilitate.py prep .eamos-core/orchestrator/examples/qbr-c-level.yaml --minutes 60 > build/agenda.md
+          python .eamos-core/tools/render.py .eamos-core/orchestrator/examples/qbr-c-level.yaml > build/deck-ir-piped.json
+          python -c "import sys; sys.exit('⟨' not in open('build/agenda.md', encoding='utf-8').read())"
+          python -c "import json; json.load(open('build/deck-ir-piped.json', encoding='utf-8'))"
+          echo "piped-stdout: utf-8 ✓"

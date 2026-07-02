@@ -222,6 +222,21 @@ class TestRedaction(unittest.TestCase):
         self.assertNotIn("Rossi", cell["value"])
 
 
+class TestPipedStdout(unittest.TestCase):
+    def test_piped_stdout_survives_non_utf8_code_page(self):
+        # On Windows a piped stdout picks the ANSI code page (cp1252), which cannot encode the
+        # grounding markers — utf8_stdio() must force UTF-8 so `tool ... > file` never crashes (#54).
+        import subprocess
+        for cmd, marker in (
+            ([os.path.join(TOOLS, "facilitate.py"), "prep", Q3, "--minutes", "60"], "⟨"),
+            ([os.path.join(TOOLS, "render.py"), Q3], "⟨"),
+        ):
+            with self.subTest(tool=os.path.basename(cmd[0])):
+                out = subprocess.run([sys.executable] + cmd, capture_output=True)
+                self.assertEqual(out.returncode, 0, out.stderr.decode("utf-8", "replace"))
+                self.assertIn(marker, out.stdout.decode("utf-8"))
+
+
 @unittest.skipUnless(HAS_PPTX, "python-pptx not installed (the deck connector is optional)")
 class TestIntakeDeck(unittest.TestCase):
     def test_deck_roundtrip(self):

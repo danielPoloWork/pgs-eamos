@@ -24,6 +24,7 @@ import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
+import _cli      # noqa: E402  (utf8_stdio, #54)
 import yamlmini  # noqa: E402
 import render    # noqa: E402  (shared loaders for the intake taxonomy / question tree / routing)
 
@@ -176,6 +177,7 @@ def emit_yaml(ledger):
 
 
 def main():
+    _cli.utf8_stdio()   # Windows: piped stdout must stay UTF-8 (#54)
     ap = argparse.ArgumentParser(description="Reorganize provided material into a typed inputs ledger.")
     ap.add_argument("--csv", action="append", help="a pasted/exported KPI table (repeatable)")
     ap.add_argument("--series", help="a series store JSON (the prior instance's data)")

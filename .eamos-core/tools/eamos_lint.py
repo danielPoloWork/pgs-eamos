@@ -26,6 +26,7 @@ import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
+import _cli      # noqa: E402  (utf8_stdio, #54)
 import render  # noqa: E402  (reuses the loader + build_deck_ir)
 import yamlmini  # noqa: E402
 
@@ -266,6 +267,7 @@ def gate_rubric(manifest, deck_ir):
 
 
 def main():
+    _cli.utf8_stdio()   # Windows: piped stdout must stay UTF-8 (#54)
     if len(sys.argv) < 2:
         print("usage: eamos_lint.py <manifest.yaml>")
         return 2

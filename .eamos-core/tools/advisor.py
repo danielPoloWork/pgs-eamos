@@ -25,6 +25,7 @@ import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
+import _cli      # noqa: E402  (utf8_stdio, #54)
 import yamlmini  # noqa: E402
 import render    # noqa: E402  (reuse scorecard_ledger + resolve_text + the ledger model)
 
@@ -158,6 +159,7 @@ def simulate(manifest_path, sets):
 
 
 def main():
+    _cli.utf8_stdio()   # Windows: piped stdout must stay UTF-8 (#54)
     ap = argparse.ArgumentParser(description="EAMOS advisor — pattern matching & what-if simulation.")
     ap.add_argument("op", choices=["record", "match", "simulate"])
     ap.add_argument("manifest")

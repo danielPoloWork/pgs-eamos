@@ -16,6 +16,8 @@ import json
 import os
 import sys
 
+import _cli  # utf8_stdio (#54)
+
 LABELS = {
     "it": {"kpi": "KPI", "value": "Valore", "target": "Target", "source": "Fonte / nota",
            "review": "Da verificare prima della sala"},
@@ -87,6 +89,7 @@ def build_xlsx(ir, out_path):
 
 
 def main():
+    _cli.utf8_stdio()   # Windows: piped stdout must stay UTF-8 (#54)
     ap = argparse.ArgumentParser(description="Emit a .xlsx KPI table from a data-IR.")
     ap.add_argument("data_ir", help="path to a data-IR JSON file")
     ap.add_argument("--out", required=True, help="output .xlsx path")
