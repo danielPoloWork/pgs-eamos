@@ -124,6 +124,17 @@ class TestGrounding(unittest.TestCase):
         self.assertIn("sys.platform", acc["invalid_provenance"])
 
 
+class TestIRVersion(unittest.TestCase):
+    def test_every_projection_is_stamped(self):
+        m, arch = load("qbr-c-level")
+        for builder in (render.build_deck_ir, render.build_infographic_ir, render.build_data_ir,
+                        render.build_graph_ir, render.build_quiz_ir, render.build_topology_ir):
+            with self.subTest(ir=builder.__name__):
+                ir, _ = builder(m, arch)
+                self.assertEqual(ir["ir_version"], render.IR_VERSION)   # versioned contract (#62)
+                self.assertEqual(ir["generator"], "eamos-render")
+
+
 class TestDecisionContract(unittest.TestCase):
     def test_decision_contract_renders_through_md(self):
         import emit_md

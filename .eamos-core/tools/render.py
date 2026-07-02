@@ -33,6 +33,11 @@ QUESTIONS = os.path.join(CORE, "orchestrator", "os", "intake", "questions.yaml")
 ROUTING = os.path.join(CORE, "orchestrator", "os", "intake", "routing.yaml")
 
 BIND_RE = re.compile(r"\{\{\s*([a-z][a-z0-9_.]*)\s*\}\}")
+# The IR contract version (#62), stamped into every projection. The IR is a persisted artifact
+# (build/*.json) that outlives tool runs and crosses the determinism boundary into the emitters —
+# bump on ANY breaking change to block/field shapes, so an emitter refuses instead of mis-rendering.
+IR_VERSION = 1
+GENERATOR = "eamos-render"
 # The provenance enum. Anything else — a typo, a missing field, a future value — is treated as
 # assumed (fail closed, #53) and flagged for the grounding gate: only the explicit `sourced`
 # may render plain.
@@ -360,6 +365,8 @@ def build_deck_ir(manifest, archetype, altitude=None, function=None):
     ]
 
     deck_ir = {
+        "ir_version": IR_VERSION,
+        "generator": GENERATOR,
         "deliverable": deliverable.get("type", "presentation"),
         "format": deliverable.get("format", "speaker"),
         "length": deliverable.get("length", "medium"),
@@ -424,6 +431,8 @@ def build_infographic_ir(manifest, archetype, altitude=None, function=None):
         for k in sorted(acc["assumed"])
     ]
     info_ir = {
+        "ir_version": IR_VERSION,
+        "generator": GENERATOR,
         "deliverable": "infographic",
         "orientation": params.get("orientation", "portrait"),
         "visual_style": params.get("visual_style", "professional"),
@@ -485,6 +494,8 @@ def build_data_ir(manifest, archetype, altitude=None, function=None):
         for k in sorted(acc["assumed"])
     ]
     return {
+        "ir_version": IR_VERSION,
+        "generator": GENERATOR,
         "deliverable": "table_chart",
         "chart": params.get("chart", "none"),
         "output_lang": lang,
@@ -531,7 +542,8 @@ def build_graph_ir(manifest, archetype, altitude=None, function=None):
          "assumption": ledger[k].get("assumption", ""), "fill_from": ledger[k].get("fill_from", "")}
         for k in sorted(acc["assumed"])
     ]
-    return {"deliverable": "mindmap", "output_lang": lang, "root": manifest.get("objective", ""),
+    return {"ir_version": IR_VERSION, "generator": GENERATOR,
+            "deliverable": "mindmap", "output_lang": lang, "root": manifest.get("objective", ""),
             "branches": branches, "review_appendix": review_appendix}, acc
 
 
@@ -570,7 +582,8 @@ def build_quiz_ir(manifest, archetype, altitude=None, function=None):
          "assumption": ledger[k].get("assumption", ""), "fill_from": ledger[k].get("fill_from", "")}
         for k in sorted(acc["assumed"])
     ]
-    return {"deliverable": "interview_quiz", "output_lang": lang, "title": manifest.get("objective", ""),
+    return {"ir_version": IR_VERSION, "generator": GENERATOR,
+            "deliverable": "interview_quiz", "output_lang": lang, "title": manifest.get("objective", ""),
             "questions": questions, "review_appendix": review_appendix}, acc
 
 
@@ -611,7 +624,8 @@ def build_topology_ir(manifest, archetype=None, altitude=None, function=None):
          "assumption": ledger[k].get("assumption", ""), "fill_from": ledger[k].get("fill_from", "")}
         for k in sorted(acc["assumed"])
     ]
-    return {"deliverable": "architecture", "output_lang": lang, "title": manifest.get("objective", ""),
+    return {"ir_version": IR_VERSION, "generator": GENERATOR,
+            "deliverable": "architecture", "output_lang": lang, "title": manifest.get("objective", ""),
             "nodes": nodes, "edges": edges, "review_appendix": review_appendix}, acc
 
 

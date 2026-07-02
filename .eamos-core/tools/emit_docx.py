@@ -19,6 +19,8 @@ import sys
 import _cli    # utf8_stdio (#54)
 import labels  # chrome labels as data (#61)
 
+SUPPORTED_IR_VERSION = 1   # the IR contract this emitter was written for (#62)
+
 AMBER = (0xB8, 0x6B, 0x00)
 MUTED = (0x70, 0x70, 0x70)
 
@@ -128,6 +130,7 @@ def main():
 
     with open(args.deck_ir, encoding="utf-8") as fh:
         ir = json.load(fh)
+    _cli.require_ir_version(ir, "emit_docx", SUPPORTED_IR_VERSION)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     n = build_docx(ir, args.out)
     print(f"emit_docx: OK — pre-read ({n} paragraphs) -> {args.out}")
