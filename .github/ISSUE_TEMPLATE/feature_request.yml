@@ -1,0 +1,48 @@
+name: Feature request
+description: Propose a new capability — ideally as data, not code.
+labels: [enhancement]
+assignees: [danielPoloWork]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        EAMOS grows along a small composable grammar: **knowledge is data, not code**. Most good
+        requests are a new row in an existing axis (an archetype, an altitude overlay, a function
+        pack, a deliverable param, a gate vocabulary entry) — telling us the axis up front
+        pre-sorts triage and usually shrinks the change to one YAML file.
+  - type: dropdown
+    id: axis
+    attributes:
+      label: Which axis does this belong to?
+      options:
+        - Archetype (a meeting's deep structure)
+        - Audience altitude (an overlay)
+        - Function pack (Eng / Finance / HR / …)
+        - Company context (regulatory, framework, language, theming)
+        - Deliverable family (deck, infographic, sheet, quiz, topology, …)
+        - Gate / lint (a new check or a sharper one)
+        - Tooling / CLI
+        - Docs
+        - Something else / cross-cutting
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What can't you do today, in which meeting situation? Concrete beats abstract.
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: Proposed shape — as data if possible
+      description: >
+        If you can sketch it as YAML (an archetype section, a manifest key, a registry param, a
+        theme token), do — that sketch is often 80% of the design.
+      render: yaml
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including "do nothing" — the no-action baseline is always on the table here.
