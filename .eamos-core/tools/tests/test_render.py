@@ -135,6 +135,53 @@ class TestIRVersion(unittest.TestCase):
                 self.assertEqual(ir["generator"], "eamos-render")
 
 
+class TestDeliverableParams(unittest.TestCase):
+    """The registry knobs must change the output — validated-but-dead is worse than undeclared (#63)."""
+
+    def _quiz_graded(self, count):
+        m, arch = load("qbr-c-level")
+        for i in range(7):                        # 5 real kpi cells + 7 synthetic = 12 graded candidates
+            m["inputs"][f"kpi.zz{i}"] = {"label": f"Z{i}", "value": str(i), "provided": True,
+                                         "source": "x", "provenance": "sourced"}
+        next(d for d in m["deliverables"] if d["type"] == "interview_quiz")["count"] = count
+        quiz, _ = render.build_quiz_ir(m, arch)
+        return quiz["questions"]
+
+    def test_quiz_count_caps_graded_questions(self):
+        for count, expected in (("short", 5), ("standard", 10), ("long", 12)):
+            with self.subTest(count=count):
+                graded = [q for q in self._quiz_graded(count) if q["kind"] == "graded"]
+                self.assertEqual(len(graded), expected)
+
+    def test_quiz_count_never_caps_discussion(self):
+        qs = self._quiz_graded("short")
+        self.assertEqual(len([q for q in qs if q["kind"] == "discussion"]), 2)   # both decisions kept
+
+    def test_quiz_cap_is_stable_under_manifest_reordering(self):
+        a = [q["q"] for q in self._quiz_graded("short") if q["kind"] == "graded"]
+        m, arch = load("qbr-c-level")
+        m["inputs"] = dict(reversed(list(m["inputs"].items())))                  # same cells, new order
+        for i in range(7):
+            m["inputs"][f"kpi.zz{i}"] = {"label": f"Z{i}", "value": str(i), "provided": True,
+                                         "source": "x", "provenance": "sourced"}
+        next(d for d in m["deliverables"] if d["type"] == "interview_quiz")["count"] = "short"
+        quiz, _ = render.build_quiz_ir(m, arch)
+        self.assertEqual([q["q"] for q in quiz["questions"] if q["kind"] == "graded"], a)
+
+    def test_mindmap_orientation_changes_layout(self):
+        import emit_svg
+        m, arch = load("qbr-c-level")
+        mind, _ = render.build_graph_ir(m, arch)
+        self.assertEqual(mind["orientation"], "horizontal")     # qbr requests horizontal
+        horiz = emit_svg.build_mindmap_svg(mind)
+        next(d for d in m["deliverables"] if d["type"] == "mindmap")["orientation"] = "vertical"
+        mind_v, _ = render.build_graph_ir(m, arch)
+        self.assertEqual(mind_v["orientation"], "vertical")
+        vert = emit_svg.build_mindmap_svg(mind_v)
+        self.assertNotEqual(horiz, vert)                        # the knob changes the output
+        self.assertEqual(vert, emit_svg.build_mindmap_svg(mind_v))   # and stays deterministic
+
+
 class TestDecisionContract(unittest.TestCase):
     def test_decision_contract_renders_through_md(self):
         import emit_md

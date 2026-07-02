@@ -537,19 +537,27 @@ def build_graph_ir(manifest, archetype, altitude=None, function=None):
         slide = _build_section(sec, content, ledger, acc, lang)
         leaves = [t for t in (_flatten_block(b) for b in slide["blocks"]) if t][:3]
         branches.append({"label": slide["title"], "leaves": leaves})
+
+    # The orientation param is live (#63): stamped into the IR, the SVG emitter lays out per value.
+    params = _resolve_params(load_deliverable("mindmap"), _find_deliverable(manifest, "mindmap"))
+    orientation = params.get("orientation") or "horizontal"
     review_appendix = [
         {"binding": k, "value": "" if ledger[k].get("value") is None else str(ledger[k].get("value")),
          "assumption": ledger[k].get("assumption", ""), "fill_from": ledger[k].get("fill_from", "")}
         for k in sorted(acc["assumed"])
     ]
     return {"ir_version": IR_VERSION, "generator": GENERATOR,
-            "deliverable": "mindmap", "output_lang": lang, "root": manifest.get("objective", ""),
+            "deliverable": "mindmap", "orientation": orientation,
+            "output_lang": lang, "root": manifest.get("objective", ""),
             "branches": branches, "review_appendix": review_appendix}, acc
 
 
 def build_quiz_ir(manifest, archetype, altitude=None, function=None):
     """Project an interview quiz (quiz-IR, RFC-0002 §3, §11-3): graded questions cite a ledger
-    source (required); discussion questions (from decisions) are un-scored. SAME ledger."""
+    source (required); discussion questions (from decisions) are un-scored. SAME ledger.
+    The `count` param is live (#63): short caps the graded questions at 5, standard at 10, long is
+    uncapped — a deterministic cut over the SORTED ledger keys, so the subset is stable under
+    manifest reordering. Discussion questions are never capped."""
     acc = _new_acc()
     ident = manifest.get("identity", {}) or {}
     ctx = manifest.get("context", {}) or {}
@@ -558,10 +566,13 @@ def build_quiz_ir(manifest, archetype, altitude=None, function=None):
     lang = ctx.get("output_lang", "en")
     stem, disc = labels.lab(lang, "core", "quiz_stem"), labels.lab(lang, "core", "quiz_disc")
 
+    params = _resolve_params(load_deliverable("interview_quiz"), _find_deliverable(manifest, "interview_quiz"))
+    cap = {"short": 5, "standard": 10, "long": None}.get(params.get("count") or "standard", 10)
+
     questions = []
-    for key, cell in ledger.items():
-        if not (key.startswith("kpi.") and isinstance(cell, dict)):
-            continue
+    graded_keys = sorted(k for k, c in ledger.items() if k.startswith("kpi.") and isinstance(c, dict))
+    for key in graded_keys if cap is None else graded_keys[:cap]:
+        cell = ledger[key]
         assumed = _cell_assumed(key, cell, acc)           # fail closed (#53)
         if assumed:
             acc["assumed"][key] = cell
