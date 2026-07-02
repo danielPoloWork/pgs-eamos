@@ -145,6 +145,8 @@ projections), **not** RAG-synthesis over arbitrary sources.
 - [ ] Function packs **archetype-aware** — a pack's `add_sections` should only land in relevant archetypes (today they apply to all; worked around in the references)
 - [ ] More rubric cells (every archetype × altitude); apply the per-region localization norms
 - [ ] More reference meetings (a non-QBR flagship); `tools/tests/` coverage as features land
+- [ ] Specialized meeting personas (`agent/*.md`, RFC-0001 §8) + phase commands — referenced by the design, not yet shipped (#65)
+- [ ] Gates as data (`orchestrator/os/gate/`, RFC-0001 §10) — today the gates are code in `tools/eamos_lint.py` with their vocabularies as data (#65)
 
 ---
 

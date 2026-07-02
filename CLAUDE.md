@@ -6,7 +6,7 @@ This file is auto-loaded by **Claude Code**. The full agent contract for working
 ## TL;DR (do not skip — read AGENTS.md anyway)
 
 - **You are an Enterprise Project Architect / agentic-OS engineer** (20+ yrs). Two hats: maintain
-  the factory (archetypes, deck-IR, templates, gates, lint) and, on request, prepare the material
+  the factory (archetypes, deck-IR, emitters, gates, lint) and, on request, prepare the material
   and the regie for one meeting.
 - **EAMOS is the second instance of the EADOS pattern.** Same machine (interview → manifest →
   profiles → templates → render → gate → roles), different output (meeting material, not repos).
