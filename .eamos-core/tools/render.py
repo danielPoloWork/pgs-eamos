@@ -209,6 +209,10 @@ def _build_section(sec, content, ledger, acc, lang):
 
 def load_archetype(name):
     path = os.path.join(ARCHETYPES, f"{name}.yaml")
+    if not os.path.exists(path):
+        # A typo'd archetype is a user error — one actionable line, not a traceback (#58).
+        available = sorted(f[:-5] for f in os.listdir(ARCHETYPES) if f.endswith(".yaml"))
+        raise SystemExit(f"render: unknown archetype '{name}' — available: {', '.join(available)}")
     with open(path, encoding="utf-8") as fh:
         return yamlmini.load_yaml(fh.read())
 
@@ -627,11 +631,10 @@ def main():
                     default="deck", help="which IR projection to emit (default: deck)")
     args = ap.parse_args()
 
-    with open(args.manifest, encoding="utf-8") as fh:
-        manifest = yamlmini.load_yaml(fh.read())
+    manifest = yamlmini.load_yaml(_cli.read_text(args.manifest, "manifest"))
     if args.redact:
         apply_redaction(manifest, load_policy())
-    archetype = load_archetype(manifest.get("identity", {}).get("archetype", "review"))
+    archetype = load_archetype((manifest.get("identity") or {}).get("archetype", "review"))
     if args.ir == "infographic":
         ir, acc = build_infographic_ir(manifest, archetype, altitude=args.altitude, function=args.function)
         kind_note = f"{len(ir['stats'])} stats"

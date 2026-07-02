@@ -302,6 +302,40 @@ class TestRedaction(unittest.TestCase):
         self.assertNotIn("Rossi", cell["value"])
 
 
+class TestUserErrors(unittest.TestCase):
+    def test_unknown_archetype_exits_with_available_list(self):
+        with self.assertRaises(SystemExit) as cm:
+            render.load_archetype("postmortem")          # the file is post-mortem.yaml (#58)
+        msg = str(cm.exception)
+        self.assertIn("unknown archetype 'postmortem'", msg)
+        self.assertIn("post-mortem", msg)                # the available list guides the fix
+
+    def test_missing_manifest_exits_with_path(self):
+        with self.assertRaises(SystemExit) as cm:
+            series.close("no-such-manifest.yaml", "unused-store.json")
+        self.assertIn("no-such-manifest.yaml", str(cm.exception))
+
+    def test_prep_zero_slide_deck_fails_cleanly(self):
+        self.assertEqual(facilitate._timeboxes(0, 60), [])   # no IndexError on an empty deck (#58)
+        orig = render.load_archetype
+        render.load_archetype = lambda name: {"archetype": "empty", "structure": []}
+        try:
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = facilitate.prep(Q3, 60)
+            self.assertEqual(rc, 1)
+            self.assertIn("no sections to timebox", buf.getvalue())
+        finally:
+            render.load_archetype = orig
+
+    def test_empty_identity_preps_without_traceback(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "m.yaml")
+            with open(p, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write("identity:\nobjective: x\n")    # `identity:` present but empty (#58)
+            self.assertEqual(quiet(facilitate.prep, p, 60), 0)
+
+
 class TestPipedStdout(unittest.TestCase):
     def test_piped_stdout_survives_non_utf8_code_page(self):
         # On Windows a piped stdout picks the ANSI code page (cp1252), which cannot encode the

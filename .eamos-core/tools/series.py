@@ -26,8 +26,7 @@ ARROW = {"up": "↑", "down": "↓", "flat": "→", "unknown": "·"}
 
 
 def _load(path):
-    with open(path, encoding="utf-8") as fh:
-        return yamlmini.load_yaml(fh.read())
+    return yamlmini.load_yaml(_cli.read_text(path, "manifest"))
 
 
 def _num(s):

@@ -31,8 +31,7 @@ import render    # noqa: E402  (reuse scorecard_ledger + resolve_text + the ledg
 
 
 def _load_yaml(path):
-    with open(path, encoding="utf-8") as fh:
-        return yamlmini.load_yaml(fh.read())
+    return yamlmini.load_yaml(_cli.read_text(path, "manifest"))
 
 
 def _classification(manifest):
