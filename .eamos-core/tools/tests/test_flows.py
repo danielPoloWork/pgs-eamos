@@ -155,7 +155,7 @@ class TestAdaptiveQuestions(unittest.TestCase):
     def test_high_complexity_reaches_architecture(self):
         tree, routing = self._data()
         cls = {"cluster": "system_replacement", "complexity": "high", "decision_risk": "high"}
-        depth, sel = intake.select_questions(cls, tree, routing)
+        depth, sel, _ = intake.select_questions(cls, tree, routing)
         self.assertEqual(depth, "architecture")
         ids = [q["id"] for q in sel]
         self.assertIn("integrations", ids)                  # the architecture-level question is asked
@@ -164,15 +164,56 @@ class TestAdaptiveQuestions(unittest.TestCase):
     def test_low_complexity_stays_surface(self):
         tree, routing = self._data()
         cls = {"cluster": "integration", "complexity": "low", "decision_risk": "low"}
-        depth, sel = intake.select_questions(cls, tree, routing)
+        depth, sel, _ = intake.select_questions(cls, tree, routing)
         self.assertEqual(depth, "surface")
         self.assertNotIn("realtime", [q["id"] for q in sel])    # the architecture question is skipped
 
     def test_escalation_overrides_low_complexity(self):
         tree, routing = self._data()
         cls = {"cluster": "integration", "complexity": "low", "decision_risk": "high"}
-        depth, _ = intake.select_questions(cls, tree, routing)
+        depth, _, _ = intake.select_questions(cls, tree, routing)
         self.assertEqual(depth, "architecture")             # escalate rule {integration, high} fires
+
+    def test_missing_or_invalid_complexity_fails_shallow(self):
+        # Garbage in must buy the cheapest interview, not the deepest (#57).
+        tree, routing = self._data()
+        for cls in ({"cluster": "integration", "decision_risk": "low"},                        # missing
+                    {"cluster": "integration", "complexity": "wat", "decision_risk": "low"}):  # invalid
+            with self.subTest(complexity=cls.get("complexity")):
+                depth, sel, note = intake.select_questions(cls, tree, routing)
+                self.assertEqual(depth, "surface")
+                self.assertIn("classify first", note)
+                self.assertNotIn("realtime", [q["id"] for q in sel])   # no architecture question
+
+    def test_invalid_complexity_still_escalates(self):
+        tree, routing = self._data()
+        cls = {"cluster": "integration", "complexity": "wat", "decision_risk": "high"}
+        depth, _, note = intake.select_questions(cls, tree, routing)
+        self.assertEqual(depth, "architecture")             # the escalation rule outranks the fallback
+        self.assertEqual(note, "")
+
+    def test_questions_op_names_invalid_cluster(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "m.yaml")
+            with open(p, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write("discovery_intake:\n  classification:\n    cluster: teleportation\n")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = intake.questions_op(p)
+            self.assertEqual(rc, 1)
+            self.assertIn("teleportation", buf.getvalue())  # the invalid value is named, not silent
+
+    def test_questions_op_notes_missing_complexity_in_header(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "m.yaml")
+            with open(p, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write("discovery_intake:\n  classification:\n    cluster: integration\n")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = intake.questions_op(p)
+            self.assertEqual(rc, 0)
+            self.assertIn("depth: surface", buf.getvalue())
+            self.assertIn("classify first", buf.getvalue())
 
     def test_questions_op_on_vendor_prework(self):
         buf = io.StringIO()
