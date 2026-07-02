@@ -8,6 +8,9 @@ composing its deck-IR and checking it. The gates are *structural* and decidable 
     python tools/eamos_lint.py orchestrator/examples/qbr-c-level.yaml
 
 Gates:
+  manifest-schema            — every manifest key is in the schema vocabulary (os/manifest/schema.yaml):
+                               unknown top-level / identity / cell keys and content keys that match
+                               no composed section fail by path; archetype + altitude are required.
   completeness               — every archetype-required section is present in the deck-IR, has
                                substantive content blocks, and carries a real (non-id) title.
   grounding-labeled          — every binding resolves; every assumed value is labeled and listed
@@ -31,12 +34,67 @@ import render  # noqa: E402  (reuses the loader + build_deck_ir)
 import yamlmini  # noqa: E402
 
 RUBRIC = os.path.join(os.path.dirname(TOOLS), "eval", "rubric.yaml")
+MANIFEST_SCHEMA = os.path.join(os.path.dirname(TOOLS), "orchestrator", "os", "manifest", "schema.yaml")
 
 failures = []  # (gate, message)
 
 
 def fail(gate, message):
     failures.append((gate, message))
+
+
+def load_manifest_schema():
+    """The manifest vocabulary (#59), or {} if absent (the gate is then vacuous)."""
+    if not os.path.exists(MANIFEST_SCHEMA):
+        return {}
+    with open(MANIFEST_SCHEMA, encoding="utf-8") as fh:
+        return yamlmini.load_yaml(fh.read())
+
+
+def gate_manifest_schema(manifest, archetype):
+    """Schema-as-data validation of the manifest itself (#59). Every axis of the system is data
+    validated by a gate — this one covers the single most important input. Without it a typo'd key
+    vanishes silently: a bad cell field un-labels an assumption, a bad section key renders an empty
+    section, a bad top-level key disables a feature. Failures name the offending path."""
+    schema = load_manifest_schema()
+    if not schema:
+        return
+    allowed_top = set(schema.get("top_level", []) or [])
+    for key in sorted(manifest or {}):
+        if allowed_top and key not in allowed_top:
+            fail("manifest-schema", f"unknown top-level key '{key}'")
+
+    ident_spec = schema.get("identity", {}) or {}
+    ident = manifest.get("identity") or {}
+    for req in ident_spec.get("required", []) or []:
+        if not ident.get(req):
+            fail("manifest-schema",
+                 f"identity.{req} is required — a defaulted {req} is a guess, not intake")
+    allowed_ident = set(ident_spec.get("required", []) or []) | set(ident_spec.get("optional", []) or [])
+    for key in sorted(ident):
+        if allowed_ident and key not in allowed_ident:
+            fail("manifest-schema", f"unknown identity key 'identity.{key}'")
+
+    allowed_cell = set(schema.get("input_cell", []) or [])
+    if allowed_cell:
+        # Merge every policy-declared redact tag: a new regime's tag never needs a schema edit.
+        for spec in (render.load_policy().get("regimes", {}) or {}).values():
+            allowed_cell.update((spec or {}).get("redact_tags", []) or [])
+        for key, cell in sorted((manifest.get("inputs") or {}).items()):
+            if not isinstance(cell, dict):
+                continue
+            for field in sorted(cell):
+                if field not in allowed_cell:
+                    fail("manifest-schema", f"unknown cell field 'inputs.{key}.{field}'")
+
+    # A content key must address a section of the composed structure (archetype + function pack,
+    # BEFORE altitude shaping — content for an altitude-dropped section is still addressable).
+    sections = {s["id"] for s in render.apply_function(
+        archetype.get("structure", []) or [], render.load_function(ident.get("function", "")))}
+    for key in sorted(manifest.get("content") or {}):
+        if key not in sections:
+            fail("manifest-schema",
+                 f"content key '{key}' does not match any section of the composed structure")
 
 
 def _has_substance(slide):
@@ -272,10 +330,13 @@ def main():
         print("usage: eamos_lint.py <manifest.yaml>")
         return 2
     manifest = yamlmini.load_yaml(_cli.read_text(sys.argv[1], "manifest"))
-    archetype = render.load_archetype((manifest.get("identity") or {}).get("archetype", "review"))
+    # A missing archetype is reported red by gate_manifest_schema (#59); 'review' here only
+    # scaffolds the remaining checks so the whole report still prints.
+    archetype = render.load_archetype((manifest.get("identity") or {}).get("archetype") or "review")
     deck_ir, acc = render.build_deck_ir(manifest, archetype)
     ledger = render.scorecard_ledger(manifest)   # include computed scorecard totals (#23) for grounding
 
+    gate_manifest_schema(manifest, archetype)
     gate_completeness(deck_ir, archetype)
     gate_grounding_labeled(deck_ir, acc, ledger)
     gate_audience_fit(deck_ir, archetype)

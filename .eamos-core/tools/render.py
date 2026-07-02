@@ -634,7 +634,11 @@ def main():
     manifest = yamlmini.load_yaml(_cli.read_text(args.manifest, "manifest"))
     if args.redact:
         apply_redaction(manifest, load_policy())
-    archetype = load_archetype((manifest.get("identity") or {}).get("archetype", "review"))
+    name = (manifest.get("identity") or {}).get("archetype")
+    if not name:
+        # No silent 'review' default (#59): a defaulted archetype is a guess, not intake.
+        raise SystemExit("render: identity.archetype is required — set it in the manifest")
+    archetype = load_archetype(name)
     if args.ir == "infographic":
         ir, acc = build_infographic_ir(manifest, archetype, altitude=args.altitude, function=args.function)
         kind_note = f"{len(ir['stats'])} stats"

@@ -29,6 +29,7 @@ def run_gates(m):
     deck, acc = render.build_deck_ir(m, arch)
     ledger = render.scorecard_ledger(m)   # include computed scorecard totals (#23)
     eamos_lint.failures.clear()
+    eamos_lint.gate_manifest_schema(m, arch)
     eamos_lint.gate_completeness(deck, arch)
     eamos_lint.gate_grounding_labeled(deck, acc, ledger)
     eamos_lint.gate_audience_fit(deck, arch)
@@ -110,6 +111,42 @@ class TestTeeth(unittest.TestCase):
         m = load("board-confidential")
         m["classification"] = "public"
         self.assertIn("confidentiality", run_gates(m))
+
+    def test_typoed_cell_field_fails_schema(self):
+        m = load("qbr-c-level")
+        m["inputs"]["kpi.arr"]["provenence"] = m["inputs"]["kpi.arr"].pop("provenance")   # typo (#59)
+        ids = run_gates(m)
+        self.assertIn("manifest-schema", ids)
+        msgs = [msg for g, msg in eamos_lint.failures if g == "manifest-schema"]
+        self.assertTrue(any("inputs.kpi.arr.provenence" in msg for msg in msgs))   # path-named
+
+    def test_typoed_content_key_fails_schema(self):
+        m = load("qbr-c-level")
+        m["content"]["exec_sumary"] = m["content"].pop("exec_summary")             # typo (#59)
+        self.assertIn("manifest-schema", run_gates(m))
+
+    def test_typoed_top_level_key_fails_schema(self):
+        m = load("qbr-c-level")
+        m["carry_foward"] = m.pop("carry_forward")                                 # typo (#59)
+        self.assertIn("manifest-schema", run_gates(m))
+
+    def test_missing_archetype_fails_schema(self):
+        m = load("qbr-c-level")
+        del m["identity"]["archetype"]                    # a defaulted archetype is a guess (#59)
+        arch = render.load_archetype("review")
+        eamos_lint.failures.clear()
+        eamos_lint.gate_manifest_schema(m, arch)
+        msgs = [msg for g, msg in eamos_lint.failures if g == "manifest-schema"]
+        self.assertTrue(any("identity.archetype is required" in msg for msg in msgs))
+
+    def test_unknown_identity_key_fails_schema(self):
+        m = load("qbr-c-level")
+        m["identity"]["archetyp"] = "review"                                       # typo (#59)
+        self.assertIn("manifest-schema", run_gates(m))
+
+    def test_policy_redact_tags_stay_valid_cell_fields(self):
+        m = load("board-confidential")                    # carries pii-tagged cells
+        self.assertNotIn("manifest-schema", run_gates(m))
 
     def test_typoed_provenance_fails_closed(self):
         m = load("qbr-c-level")

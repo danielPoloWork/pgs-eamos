@@ -1,0 +1,47 @@
+# Manifest vocabulary (RFC-0001 §3, §6) — the allowed keys as DATA, enforced by the
+# manifest-schema gate (eamos_lint, #59). Knowledge is data, not code: extend the vocabulary here,
+# never inside the gate. The prose contract lives in _schema.md; this file is the decidable subset
+# the gate checks — without it, a typo'd key simply vanishes (a typo'd cell field un-labels an
+# assumption; a typo'd section key renders an empty section; a typo'd top-level key disables a
+# feature with no signal), in the single most important input of the system.
+version: 1
+
+# Allowed top-level manifest keys.
+top_level:
+  - schema_version
+  - identity
+  - carry_forward
+  - context
+  - objective
+  - deliverables
+  - inputs
+  - content
+  - scorecard
+  - topology
+  - attendees
+  - discovery_intake
+  - classification
+  - series_name
+
+# identity — the axis resolution. `archetype` and `audience_altitude` are REQUIRED explicitly:
+# a defaulted archetype is a guess, not intake (#59).
+identity:
+  required: [archetype, audience_altitude]
+  optional: [function, series_id, instance, series_name]
+
+# Allowed fields of one typed inputs-ledger cell (RFC-0001 §6). The gate additionally allows every
+# redact tag declared by the confidentiality policy (policy.yaml regimes.*.redact_tags), merged at
+# load — a new regime's tag must never need a schema edit.
+input_cell:
+  - label
+  - value
+  - provided
+  - source
+  - provenance
+  - assumption
+  - fill_from
+  - review_required
+  - via
+  - sensitive
+  - pii
+  - phi
