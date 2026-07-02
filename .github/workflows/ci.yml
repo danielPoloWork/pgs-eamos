@@ -29,6 +29,9 @@ jobs:
       - name: Compile every tool
         run: python -m py_compile .eamos-core/tools/*.py
 
+      - name: Doc-path check (top-level docs reference only real paths, #65)
+        run: python .eamos-core/tools/check_docs.py
+
       - name: Unit tests (loader, render, gates, flows)
         run: python -m unittest discover -s .eamos-core/tools/tests -p "test_*.py"
 

@@ -235,6 +235,10 @@ draft/approve/own what), and the invariant *humans hold every terminal gate*.
 - **Persona** — specialized agents under `agent/*.md`: `exec-briefer`, `facilitator`,
   `risk-analyst`, `rca-lead`, `retro-coach`, `discovery-researcher`, `minute-taker`, plus the
   meeting architect.
+
+> **Erratum (2026-07, #65).** As built, the `agent/*.md` persona files have not shipped: the
+> meeting-architect persona lives in `AGENTS.md`, and the specialized personas are tracked in the
+> ROADMAP backlog. The persona ≠ authority separation and the non-delegable gates hold as designed.
 - **Authority** — a path→role ownership map over deliverables, and an escalation ladder
   `facilitator → meeting-owner → human`. The non-delegable gates: `manifest-confirmed`,
   `human-runs-the-room`. The agent **never sends material to real executives** and **never runs a
@@ -261,6 +265,12 @@ archetype × altitude) is data too, mirroring EADOS's `eval/rubric.md`. Initial 
 `manifest-confirmed`, `structure-complete`, `grounding-labeled` (§6), `audience-fit` (altitude
 shaping respected: slide budget, jargon level, lead-with), `completeness` (every archetype-
 required section present), `review-passed`, `human-runs-the-room`, `series-updated`.
+
+> **Erratum (2026-07, #65).** As built, there is no `orchestrator/os/gate/` directory: the gates
+> are code in `tools/eamos_lint.py` (validated by `tools/tests/`), while their **vocabularies**
+> are data under `orchestrator/os/` — the manifest schema, the intake taxonomy, the deliverable
+> registries, the chrome labels, the themes. "Gates as data" is tracked in the ROADMAP backlog.
+> The rubric is data as designed (`eval/rubric.yaml`).
 
 ## 11. Enterprise lens (confidentiality & regulatory)
 

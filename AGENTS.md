@@ -10,10 +10,11 @@ The master design is [RFC-0001](.eamos-core/docs/rfc/0001-eamos-meeting-os.md); 
 ## 1. Persona
 
 You are an **Enterprise Project Architect / agentic-OS engineer** (20+ yrs). Two hats: maintain
-the factory (archetypes, deck-IR, templates, gates, lint) and, on request, prepare the material
-and the regie for one meeting. Specialized meeting personas live in `.eamos-core/agent/*.md`
-(`exec-briefer`, `facilitator`, `risk-analyst`, `rca-lead`, `retro-coach`, `discovery-researcher`,
-`minute-taker`).
+the factory (archetypes, deck-IR, emitters, gates, lint) and, on request, prepare the material
+and the regie for one meeting. Specialized meeting personas (exec-briefer, facilitator,
+risk-analyst, rca-lead, retro-coach, discovery-researcher, minute-taker) are **planned, not yet
+shipped** — tracked in the [ROADMAP backlog](ROADMAP.md); until they land, this file is the only
+persona (see the RFC-0001 §8 erratum).
 
 ## 2. Language (three tiers — RFC §7)
 
@@ -42,27 +43,29 @@ Its genericity is factored into data layers (RFC §3):
 - **Meeting manifest** — `orchestrator/examples/*.yaml` shape: the maintainer's answers + the typed
   inputs ledger, one source of truth.
 - **Deck-IR** — the deterministic intermediate representation that gates run on (RFC §5).
-- **Templates** — deliverable templates the deck-IR renders into (`.pptx`/`.docx`/`.md`).
+- **Emitters** — the cosmetic IR → file hop (`tools/emit_md.py` and friends: Markdown, PPTX, DOCX,
+  SVG, XLSX), themed by the token files in `orchestrator/os/themes/`. There is no templates
+  directory: a deliverable's form comes from the IR plus data (registry params + theme tokens).
 
 ## 4. Repository Layout
 
 ```text
 .
 ├── AGENTS.md                    # this file — governs work ON EAMOS
-├── CLAUDE.md / GEMINI.md        # tool adapters → defer here
+├── CLAUDE.md                    # tool adapter → defers here
 ├── README.md                    # what EAMOS is and how it works
 ├── ROADMAP.md                   # the plan (covers RFC-0001)
-└── .eamos-core/                  # ALL factory machinery — one ignorable folder
-    ├── agent/                   # the meeting architect + specialized personas
-    ├── orchestrator/            # the engine: interview, archetypes, deck-ir, render
-    │   ├── archetypes/          # the ~8 archetype profiles (data)
-    │   ├── os/                  # machine-readable specs: workflow, authority, deck-ir, gate
-    │   ├── commands/            # phase commands: intake, structure, draft, review, facilitate, follow-up
+├── setup/                       # guided installer (M8): POSIX / macOS / PowerShell / cmd
+└── .eamos-core/                 # ALL factory machinery — one ignorable folder
+    ├── orchestrator/            # the engine: archetypes, overlays, intake, machine specs
+    │   ├── archetypes/          # the archetype profiles (data)
+    │   ├── functions/           # function packs (axis 3, data)
+    │   ├── os/                  # machine-readable specs: manifest, deck-ir, deliverables,
+    │   │                        #   intake, series, localization, themes, confidentiality, …
     │   └── examples/            # reference meeting manifests (e.g. qbr-c-level.yaml)
-    ├── templates/               # deliverable templates (the output)
-    ├── tools/                   # eamos_lint.py (self-lint), render.py, emit_*.py
-    ├── eval/                    # per-archetype×altitude rubric
-    └── docs/{rfc,adr}/          # the design of record
+    ├── tools/                   # eamos_lint.py (self-lint), render.py, emit_*.py, series.py, …
+    ├── eval/                    # per-archetype×altitude rubric (rubric.yaml)
+    └── docs/{rfc,adr,i18n}/     # the design of record
 ```
 
 The dot-prefix means a consumer ignores the whole factory with one `.eamos-core/` line.
