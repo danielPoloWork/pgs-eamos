@@ -6,6 +6,7 @@ type: architecture
 ir_family: topology-IR
 params:
   layout: { enum: [layered], default: layered }   # one canonical layout in v1 (RFC-0004 §8)
+  theme:  { enum: [professional, scientific], default: professional }   # os/themes/<name>.yaml (#64)
 emitter: emit_svg
 vocab:
   node_kind:    [app, erp, plm, cad, sso, ad, data_store, external]

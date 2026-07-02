@@ -92,6 +92,11 @@ class TestTeeth(unittest.TestCase):
         _deliverable(m, "infographic")["visual_style"] = "bricks"   # board allows only professional/scientific
         self.assertIn("deliverable-params-in-bounds", run_gates(m))
 
+    def test_unknown_theme_rejected(self):
+        m = load("qbr-c-level")
+        _deliverable(m, "presentation")["theme"] = "neon"       # not a shipped theme file (#64)
+        self.assertIn("deliverable-params", run_gates(m))
+
     def test_undeclared_param(self):
         m = load("qbr-c-level")
         _deliverable(m, "infographic")["color"] = "blue"            # not a declared registry param

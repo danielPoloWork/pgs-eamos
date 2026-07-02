@@ -3,5 +3,6 @@ type: mindmap
 ir_family: graph-IR
 params:
   orientation: { enum: [horizontal, vertical], default: horizontal }
+  theme:       { enum: [professional, scientific], default: professional }   # os/themes/<name>.yaml (#64)
   intent:      { kind: free_text }
 emitter: emit_svg

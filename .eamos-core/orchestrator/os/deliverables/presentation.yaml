@@ -4,5 +4,6 @@ ir_family: slide-IR
 params:
   format: { enum: [detailed, speaker], default: speaker }   # detailed = read-alone; speaker = key points
   length: { enum: [short, medium, long], default: medium }
+  theme:  { enum: [professional, scientific], default: professional }   # os/themes/<name>.yaml (#64)
   intent: { kind: free_text }                               # shapes form/emphasis, never facts (RFC-0002 §7)
 emitter: emit_pptx

@@ -18,11 +18,11 @@ import sys
 
 import _cli    # utf8_stdio (#54)
 import labels  # chrome labels as data (#61)
+import themes  # theme tokens as data (#64)
 
 SUPPORTED_IR_VERSION = 1   # the IR contract this emitter was written for (#62)
 
-AMBER = (0xB8, 0x6B, 0x00)
-MUTED = (0x70, 0x70, 0x70)
+AMBER = themes.rgb(themes.AMBER)   # reserved: the grounding signal (RFC-0001 §6) is not themable
 
 
 def _lab(lang, key):
@@ -44,12 +44,13 @@ def build_docx(ir, out_path):
     from docx.shared import Pt
 
     lang = ir.get("output_lang", "en")
+    muted = themes.rgb(themes.color(themes.load(ir.get("theme")), "muted"))   # theme tokens (#64)
     doc = Document()
 
     doc.add_heading(ir.get("objective", ""), level=0)
     cap = doc.add_paragraph()
     _run(cap, f"{_lab(lang, 'preread')} · {ir.get('archetype', '')} · {ir.get('altitude', '')} · "
-              f"{ir.get('deliverable', '')}/{ir.get('format', '')} · {lang}", color=MUTED)
+              f"{ir.get('deliverable', '')}/{ir.get('format', '')} · {lang}", color=muted)
 
     for slide in ir.get("slides", []):
         doc.add_heading(slide.get("title", slide.get("id", "")), level=1)

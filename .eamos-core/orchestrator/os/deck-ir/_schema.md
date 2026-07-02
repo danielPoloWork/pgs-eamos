@@ -11,6 +11,7 @@ generator:    eamos-render                        # provenance of the artifact
 deliverable:  <type, e.g. presentation>           # from the manifest's deliverables[] (RFC-0002 §4)
 format:       <e.g. speaker | detailed>           # presentation render mode
 length:       <short | medium | long>
+theme:        <os/themes/<name>.yaml>             # resolved theme NAME (#64); emitters load the tokens
 archetype:    <archetype id>
 altitude:     <audience altitude>
 output_lang:  <ISO code; rendered prose language>

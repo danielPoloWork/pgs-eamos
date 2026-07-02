@@ -18,13 +18,11 @@ import sys
 
 import _cli    # utf8_stdio (#54)
 import labels  # chrome labels as data (#61)
+import themes  # theme tokens as data (#64)
 
 SUPPORTED_IR_VERSION = 1   # the IR contract this emitter was written for (#62)
 
-NAVY = (0x1E, 0x27, 0x61)      # title
-BODY = (0x2B, 0x2B, 0x2B)      # body text
-AMBER = (0xB8, 0x6B, 0x00)     # assumed / to-verify
-MUTED = (0x70, 0x70, 0x70)     # captions
+AMBER = themes.rgb(themes.AMBER)   # reserved: the grounding signal (RFC-0001 §6) is not themable
 
 
 def _lab(lang, key):
@@ -60,6 +58,11 @@ def build_pptx(ir, out_path):
     from pptx.enum.text import PP_ALIGN
 
     lang = ir.get("output_lang", "en")
+    tokens = themes.load(ir.get("theme"))                     # theme tokens as data (#64)
+    accent = themes.rgb(themes.color(tokens, "accent"))
+    body_color = themes.rgb(themes.color(tokens, "body"))
+    muted = themes.rgb(themes.color(tokens, "muted"))
+    font = tokens.get("font") or "Calibri"
     prs = Presentation()
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
@@ -78,7 +81,7 @@ def build_pptx(ir, out_path):
         run.text = ("•  " + text) if bullet else text
         run.font.size = Pt(size)
         run.font.bold = bold
-        run.font.name = "Calibri"
+        run.font.name = font
         # Assumed/to-verify values carry the ⟨…⟩ marker from the IR — flag them in amber.
         run.font.color.rgb = RGBColor(*(AMBER if "⟨" in text else color))
         p.space_after = Pt(6)
@@ -87,27 +90,27 @@ def build_pptx(ir, out_path):
     # Title slide.
     s0 = prs.slides.add_slide(blank)
     t = textbox(s0, 0.7, 2.4, 12.0, 2.4)
-    para(t, ir.get("objective", ""), 40, NAVY, bold=True, first=True)
+    para(t, ir.get("objective", ""), 40, accent, bold=True, first=True)
     cap = textbox(s0, 0.7, 4.7, 12.0, 0.6)
     para(cap, f"{ir.get('archetype', '')}  ·  {ir.get('altitude', '')}  ·  "
-              f"{ir.get('deliverable', '')}/{ir.get('format', '')}  ·  {lang}", 16, MUTED, first=True)
+              f"{ir.get('deliverable', '')}/{ir.get('format', '')}  ·  {lang}", 16, muted, first=True)
 
     # Content slides.
     for slide in ir.get("slides", []):
         sl = prs.slides.add_slide(blank)
         head = textbox(sl, 0.7, 0.5, 12.0, 1.0)
-        para(head, slide.get("title", slide.get("id", "")), 32, NAVY, bold=True, first=True)
+        para(head, slide.get("title", slide.get("id", "")), 32, accent, bold=True, first=True)
         body = textbox(sl, 0.7, 1.7, 12.0, 5.3)
         for i, b in enumerate(slide.get("blocks", [])):
             line = _line(b, lang)
             if not line:
                 continue
             if b.get("type") == "lead":
-                para(body, line, 18, BODY, bold=True, first=(i == 0))
+                para(body, line, 18, body_color, bold=True, first=(i == 0))
             elif b.get("type") == "kpi_row":
-                para(body, line, 16, BODY, bullet=True, first=(i == 0))
+                para(body, line, 16, body_color, bullet=True, first=(i == 0))
             else:
-                para(body, line, 16, BODY, bullet=True, first=(i == 0))
+                para(body, line, 16, body_color, bullet=True, first=(i == 0))
 
     # Review appendix slide.
     appendix = ir.get("review_appendix", [])
