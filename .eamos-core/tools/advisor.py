@@ -52,7 +52,8 @@ def _load_repo(path):
 
 
 def record(manifest_path, repo_path, date=""):
-    """Append this manifest's closed decision to the repository. Returns the record."""
+    """Write this manifest's closed decision into the repository, replacing any prior record of
+    the same series_id+instance (#56). Returns the record."""
     m = _load_yaml(manifest_path)
     ident = m.get("identity", {}) or {}
     lang = (m.get("context", {}) or {}).get("output_lang", "en")
@@ -69,7 +70,12 @@ def record(manifest_path, repo_path, date=""):
         "residual_risks": [_resolved(r, ledger, lang) for r in (contract.get("residual_risks", []) or [])],
     }
     repo = _load_repo(repo_path)
-    repo.setdefault("records", []).append(rec)
+    records = repo.setdefault("records", [])
+    # Replace-by-(series_id, instance) (#56): re-recording the same decision must not create a
+    # duplicate record — duplicates would inflate that precedent's match score.
+    records[:] = [r for r in records
+                  if (r.get("series_id"), r.get("instance")) != (rec["series_id"], rec["instance"])]
+    records.append(rec)
     os.makedirs(os.path.dirname(os.path.abspath(repo_path)), exist_ok=True)
     with open(repo_path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(json.dumps(repo, indent=2, ensure_ascii=False) + "\n")

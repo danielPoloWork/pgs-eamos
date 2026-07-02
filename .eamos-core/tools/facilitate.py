@@ -192,6 +192,9 @@ def followup(manifest_path, outcomes_path, store_path, out):
     store["series_id"] = series_id
     if instance not in store["instances"]:
         store["instances"].append(instance)
+    # Replace-by-instance (#56): a re-run must not duplicate decisions or re-issue action ids.
+    store["decision_log"] = [d for d in store["decision_log"] if d.get("instance") != instance]
+    store["open_actions"] = [a for a in store["open_actions"] if a.get("from") != instance]
     for d in decisions:
         store["decision_log"].append({"instance": instance, "decision": d})
     for i, a in enumerate(actions, 1):
