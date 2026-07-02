@@ -80,6 +80,11 @@ def close(manifest_path, store_path):
     store["series_id"] = series_id
     if instance not in store["instances"]:
         store["instances"].append(instance)
+    # Re-closing the same instance replaces, never appends (#56): a re-run — crash recovery, a
+    # corrected manifest, a second attempt — first drops what this instance previously wrote, so
+    # the store the next instance pre-reads from cannot be silently poisoned by duplicates.
+    store["decision_log"] = [d for d in store["decision_log"] if d.get("instance") != instance]
+    store["open_actions"] = [a for a in store["open_actions"] if a.get("from") != instance]
 
     # Carry by section KIND (RFC-0005, #24), so the moat spans archetypes (not just review): every
     # decision_list section -> the decision log (the shortlist / asks); every risk_list -> open

@@ -67,6 +67,19 @@ class TestSeries(unittest.TestCase):
             self.assertEqual((arr["prior"], arr["current"], arr["direction"]), ("11.8M€", "12.4M€", "up"))
 
 
+    def test_reclose_same_instance_is_idempotent(self):
+        # A re-run — crash recovery, a corrected manifest, a second attempt — must not poison the
+        # store: close ×2 must produce a byte-identical store to close ×1 (#56).
+        with tempfile.TemporaryDirectory() as d:
+            store = os.path.join(d, "s.json")
+            self.assertEqual(quiet(series.close, Q2, store), 0)
+            with open(store, "rb") as fh:
+                once = fh.read()
+            self.assertEqual(quiet(series.close, Q2, store), 0)
+            with open(store, "rb") as fh:
+                self.assertEqual(fh.read(), once)
+
+
 class TestVendorSelectionSeries(unittest.TestCase):
     def test_series_carries_shortlist_across_archetypes(self):
         with tempfile.TemporaryDirectory() as d:
@@ -108,6 +121,19 @@ class TestAdvisor(unittest.TestCase):
             self.assertEqual(rec["classification"]["cluster"], "system_replacement")
             self.assertIn("buy", rec["recommendation"].lower())
             self.assertEqual(len(_json(repo)["records"]), 1)
+
+    def test_rerecord_same_instance_is_idempotent(self):
+        # Re-recording the same series_id+instance must replace, not duplicate — duplicates would
+        # inflate that precedent's match score (#56).
+        with tempfile.TemporaryDirectory() as d:
+            repo = os.path.join(d, "repo.json")
+            quiet(advisor.record, self.VSEL, repo)
+            with open(repo, "rb") as fh:
+                once = fh.read()
+            quiet(advisor.record, self.VSEL, repo)
+            self.assertEqual(len(_json(repo)["records"]), 1)
+            with open(repo, "rb") as fh:
+                self.assertEqual(fh.read(), once)
 
 
 class TestIntake(unittest.TestCase):
@@ -170,6 +196,19 @@ class TestFacilitate(unittest.TestCase):
             q3 = [a for a in s["open_actions"] if a["from"] == "Q3-2026"]
             self.assertEqual(len(q3), 2)
             self.assertTrue(all(a.get("owner") and a.get("due") for a in q3))
+
+    def test_refollowup_same_instance_is_idempotent(self):
+        # Re-running followup must not duplicate decisions or re-issue action ids (#56).
+        with tempfile.TemporaryDirectory() as d:
+            store = os.path.join(d, "s.json")
+            self.assertEqual(quiet(facilitate.followup, Q3, OUTCOMES, store, os.path.join(d, "m.md")), 0)
+            with open(store, "rb") as fh:
+                once = fh.read()
+            self.assertEqual(quiet(facilitate.followup, Q3, OUTCOMES, store, os.path.join(d, "m.md")), 0)
+            with open(store, "rb") as fh:
+                self.assertEqual(fh.read(), once)
+            ids = [a["id"] for a in _json(store)["open_actions"]]
+            self.assertEqual(len(ids), len(set(ids)))               # action ids issued once
 
     def test_prep_runs(self):
         self.assertEqual(quiet(facilitate.prep, Q3, 60), 0)
