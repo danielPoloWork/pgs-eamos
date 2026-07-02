@@ -155,8 +155,7 @@ def select_questions(classification, tree, routing):
 def questions_op(manifest_path):
     """Print the adaptive question set for a classified manifest — the Phase-C interview script for
     the #32 'targeted questions' phase. The agent asks these; the human answers (-> discovery_intake)."""
-    with open(manifest_path, encoding="utf-8") as fh:
-        m = yamlmini.load_yaml(fh.read())
+    m = yamlmini.load_yaml(_cli.read_text(manifest_path, "manifest"))
     di = m.get("discovery_intake") or {}
     cls = di.get("classification") if isinstance(di, dict) else None
     if not isinstance(cls, dict) or not cls.get("cluster"):

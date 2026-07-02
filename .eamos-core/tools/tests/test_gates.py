@@ -150,5 +150,16 @@ class TestTeeth(unittest.TestCase):
         self.assertIn("confidentiality", ids)   # SOX flags the failed mandatory gate
 
 
+class TestUserErrors(unittest.TestCase):
+    def test_empty_identity_does_not_crash_gates(self):
+        arch = render.load_archetype("review")
+        m = load("qbr-c-level")
+        m["identity"] = None                       # `identity:` present but empty (#58)
+        eamos_lint.failures.clear()
+        eamos_lint.gate_params_in_bounds(m, arch)  # must not raise AttributeError
+        deck, _ = render.build_deck_ir(m, arch)
+        self.assertTrue(deck["slides"])
+
+
 if __name__ == "__main__":
     unittest.main()

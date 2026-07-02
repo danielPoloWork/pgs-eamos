@@ -51,9 +51,8 @@ def _lab(lang, k):
     return LABELS.get(lang, LABELS["en"]).get(k, LABELS["en"][k])
 
 
-def _load(path):
-    with open(path, encoding="utf-8") as fh:
-        return yamlmini.load_yaml(fh.read())
+def _load(path, what="manifest"):
+    return yamlmini.load_yaml(_cli.read_text(path, what))
 
 
 def _flatten(block):
@@ -71,7 +70,9 @@ def _flatten(block):
 
 
 def _timeboxes(n, total):
-    base = max(5, (total // n // 5) * 5) if n else total
+    if not n:
+        return []                              # a zero-slide deck has nothing to timebox (#58)
+    base = max(5, (total // n // 5) * 5)
     boxes = [base] * n
     boxes[-1] += total - sum(boxes)            # last item absorbs the remainder
     return boxes
@@ -126,10 +127,14 @@ def _roster(attendees, lang):
 
 def prep(manifest_path, minutes, template=None):
     m = _load(manifest_path)
-    archetype = render.load_archetype(m.get("identity", {}).get("archetype", "review"))
+    archetype = render.load_archetype((m.get("identity") or {}).get("archetype", "review"))
     deck_ir, _ = render.build_deck_ir(m, archetype)
     lang = deck_ir.get("output_lang", "en")
     slides = deck_ir.get("slides", [])
+    if not slides:
+        print("facilitate: FAIL — no sections to timebox (the composed deck has zero slides; "
+              "check the archetype structure and the altitude shaping)")
+        return 1
     boxes = _timeboxes(len(slides), minutes)
 
     out = [f"# {_lab(lang, 'agenda')} — {m.get('objective', '')}", ""]
@@ -168,7 +173,7 @@ def followup(manifest_path, outcomes_path, store_path, out):
     series_id, instance = ident.get("series_id"), ident.get("instance")
     lang = (m.get("context", {}) or {}).get("output_lang", "en")
     ledger = m.get("inputs", {}) or {}
-    o = _load(outcomes_path)
+    o = _load(outcomes_path, "outcomes file")
     decisions = o.get("decisions", []) or []
     actions = o.get("actions", []) or []
 

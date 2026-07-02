@@ -90,7 +90,7 @@ def gate_audience_fit(deck_ir, archetype):
 
 
 def gate_params_in_bounds(manifest, archetype):
-    altitude = manifest.get("identity", {}).get("audience_altitude", "")
+    altitude = (manifest.get("identity") or {}).get("audience_altitude", "")
     bounds = (archetype.get("deliverable_bounds", {}) or {}).get(altitude, {}) or {}
     for d in manifest.get("deliverables", []) or []:
         dtype = d.get("type")
@@ -271,9 +271,8 @@ def main():
     if len(sys.argv) < 2:
         print("usage: eamos_lint.py <manifest.yaml>")
         return 2
-    with open(sys.argv[1], encoding="utf-8") as fh:
-        manifest = yamlmini.load_yaml(fh.read())
-    archetype = render.load_archetype(manifest.get("identity", {}).get("archetype", "review"))
+    manifest = yamlmini.load_yaml(_cli.read_text(sys.argv[1], "manifest"))
+    archetype = render.load_archetype((manifest.get("identity") or {}).get("archetype", "review"))
     deck_ir, acc = render.build_deck_ir(manifest, archetype)
     ledger = render.scorecard_ledger(manifest)   # include computed scorecard totals (#23) for grounding
 

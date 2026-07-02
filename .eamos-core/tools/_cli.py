@@ -8,7 +8,17 @@ UnicodeEncodeError — and even the console success line printed mojibake. File 
 safe (`open(..., encoding="utf-8")` everywhere); only the stdio hop was broken.
 """
 
+import os
 import sys
+
+
+def read_text(path, what="file"):
+    """Read a UTF-8 text file, or exit with one actionable line — a missing input is a user
+    error, not a traceback (#58)."""
+    if not os.path.isfile(path):
+        raise SystemExit(f"error: {what} not found: {path}")
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
 
 
 def utf8_stdio():
