@@ -16,25 +16,15 @@ import json
 import os
 import sys
 
-import _cli  # utf8_stdio (#54)
+import _cli    # utf8_stdio (#54)
+import labels  # chrome labels as data (#61)
 
 AMBER = (0xB8, 0x6B, 0x00)
 MUTED = (0x70, 0x70, 0x70)
 
-LABELS = {
-    "it": {"target": "Target", "value": "Valore", "kpi": "KPI", "risk": "Rischio", "ask": "Richiesta",
-           "pro": "pro", "con": "contro", "review": "Da verificare prima della sala",
-           "fill": "fonte", "preread": "Pre-read",
-           "next_step": "Prossimo passo", "residual_risk": "Rischio residuo"},
-    "en": {"target": "Target", "value": "Value", "kpi": "KPI", "risk": "Risk", "ask": "Ask",
-           "pro": "pro", "con": "con", "review": "Verify before the room",
-           "fill": "source", "preread": "Pre-read",
-           "next_step": "Next step", "residual_risk": "Residual risk"},
-}
-
 
 def _lab(lang, key):
-    return LABELS.get(lang, LABELS["en"]).get(key, LABELS["en"][key])
+    return labels.lab(lang, "docx", key)   # chrome labels as data (#61)
 
 
 def _run(paragraph, text, bold=False, color=None):

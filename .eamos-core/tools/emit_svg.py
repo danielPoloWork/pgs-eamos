@@ -18,7 +18,8 @@ import json
 import os
 import sys
 
-import _cli  # utf8_stdio (#54)
+import _cli    # utf8_stdio (#54)
+import labels  # chrome labels as data (#61)
 
 # Per visual_style palette (background, accent, body, amber, muted, card). Unknown styles fall back
 # to professional. Layout is shared; only the palette/theme changes (RFC-0002 §11-1).
@@ -26,14 +27,10 @@ THEMES = {
     "professional": ("#FFFFFF", "#1E2761", "#2B2B2B", "#B86B00", "#707070", "#EEF1F7"),
     "scientific":   ("#FFFFFF", "#0B3D5C", "#22303A", "#B8860B", "#5A6B73", "#EAF1F5"),
 }
-LABELS = {
-    "it": {"decisions": "Decisioni richieste", "target": "target", "verify": "valori da verificare"},
-    "en": {"decisions": "Decisions required", "target": "target", "verify": "to verify"},
-}
 
 
 def _lab(lang, key):
-    return LABELS.get(lang, LABELS["en"]).get(key, LABELS["en"][key])
+    return labels.lab(lang, "svg", key)    # chrome labels as data (#61)
 
 
 def esc(s):

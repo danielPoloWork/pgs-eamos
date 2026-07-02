@@ -93,6 +93,29 @@ class TestGrounding(unittest.TestCase):
         q = next(q for q in quiz["questions"] if q["kind"] == "graded" and "ARR" in q["q"])
         self.assertTrue(q["assumed"])
 
+    def test_es_deliverable_is_fully_localized(self):
+        # An output_lang the chrome doesn't fully cover used to render MIXED-language (#61):
+        # Spanish marker, English headings. Now every chrome string localizes together.
+        import emit_md
+        m, arch = load("qbr-c-level")
+        m["context"]["output_lang"] = "es"
+        deck, _ = render.build_deck_ir(m, arch)
+        md = emit_md.render_md(deck)
+        self.assertIn("por verificar", md)                     # grounding marker
+        self.assertIn("Riesgo", md)                            # chrome label
+        self.assertIn("Verificar antes de la reunión", md)     # review appendix heading
+        self.assertNotIn("Verify before the room", md)         # no English fallback leaks
+
+    def test_fr_verify_marker_and_chrome(self):
+        import emit_md
+        m, arch = load("qbr-c-level")
+        m["context"]["output_lang"] = "fr"
+        deck, _ = render.build_deck_ir(m, arch)
+        md = emit_md.render_md(deck)
+        self.assertIn("à vérifier", md)
+        self.assertIn("Risque", md)
+        self.assertNotIn("Verify before the room", md)
+
     def test_invalid_provenance_fails_closed_in_topology(self):
         m, arch = load("vendor-prework")
         m["inputs"]["sys.platform"]["provenance"] = "asumed"   # typo must fail closed (#53)

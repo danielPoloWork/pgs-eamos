@@ -28,6 +28,8 @@ Gates:
   classification-valid       — a problem-type classification (if present) uses taxonomy-allowed values.
   questions-valid            — the adaptive question tree + routing stay consistent with the taxonomy.
   topology-valid             — a topology diagram's edges/kinds/patterns are declared and in-vocabulary.
+  labels-valid               — every language in os/localization/labels.yaml defines every chrome key
+                               the en fallback defines (a language is supported when ALL chrome exists).
 """
 
 import os
@@ -36,6 +38,7 @@ import sys
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
 import _cli      # noqa: E402  (utf8_stdio, #54)
+import labels    # noqa: E402  (chrome labels as data, #61)
 import render  # noqa: E402  (reuses the loader + build_deck_ir)
 import yamlmini  # noqa: E402
 
@@ -275,6 +278,32 @@ def gate_topology_valid(manifest):
     return findings
 
 
+def gate_labels_valid():
+    """Chrome-label completeness (#61): every language in os/localization/labels.yaml defines every
+    key the `en` fallback defines, and nothing more — a language is supported when ALL chrome exists
+    (half-localized is worse than honestly unsupported), and a key unknown to the fallback is drift.
+    Structural + decidable, manifest-independent; vacuous if the file is absent."""
+    findings = []
+    data = labels.load()
+    ref = data.get(labels.FALLBACK) or {}
+    if not ref:
+        return findings
+    for lang, tables in sorted(data.items()):
+        if lang == labels.FALLBACK or not isinstance(tables, dict):
+            continue                                     # skip the reference itself + scalars (version)
+        for ns, keys in sorted(ref.items()):
+            have = tables.get(ns) or {}
+            for k in sorted(keys):
+                if k not in have:
+                    findings.append(("labels-valid", f"language '{lang}' is missing label '{ns}.{k}'"))
+        for ns, keys in sorted(tables.items()):
+            for k in sorted(keys or {}):
+                if k not in (ref.get(ns) or {}):
+                    findings.append(("labels-valid",
+                                     f"label '{ns}.{k}' in '{lang}' is not defined by the '{labels.FALLBACK}' fallback"))
+    return findings
+
+
 def gate_registry_params(manifest):
     """Every deliverable's params are within the registry's declared enums (RFC-0002 §4)."""
     findings = []
@@ -365,6 +394,7 @@ def run_all(manifest, archetype, deck_ir, acc, ledger):
     findings += gate_classification_valid(manifest)
     findings += gate_questions_valid()
     findings += gate_topology_valid(manifest)
+    findings += gate_labels_valid()
     findings += gate_registry_params(manifest)
     findings += gate_rubric(manifest, deck_ir, {g for g, _ in findings})
     findings += gate_confidentiality(manifest, {g for g, _ in findings})
