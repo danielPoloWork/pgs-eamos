@@ -146,6 +146,26 @@ def prep(manifest_path, minutes, template=None):
     return 0
 
 
+_VERDICTS = {"accepted", "edited", "rejected"}
+
+
+def _feedback_problem(feedback):
+    """Validate a material_feedback block (RFC-0007 §2, #67) against the closed vocabulary.
+    Returns the first problem as one actionable line, or None — a typo'd tag must fail loudly,
+    never silently become a non-preference (the #55 loader philosophy)."""
+    known = set(render.load_feedback_tags().get("tags") or {})
+    for dtype, block in (feedback or {}).items():
+        if render.load_deliverable(dtype) is None:
+            return f"material_feedback.{dtype} is not a deliverable type"
+        if not isinstance(block, dict) or block.get("verdict") not in _VERDICTS:
+            return f"material_feedback.{dtype}.verdict must be one of accepted|edited|rejected"
+        for tag in block.get("tags") or []:
+            if tag not in known:
+                return (f"material_feedback.{dtype}: unknown tag '{tag}' "
+                        f"(vocabulary: {', '.join(sorted(known))})")
+    return None
+
+
 def followup(manifest_path, outcomes_path, store_path, out):
     if not outcomes_path:
         print("facilitate: FAIL — followup requires --outcomes (what a human captured in the room). "
@@ -159,6 +179,11 @@ def followup(manifest_path, outcomes_path, store_path, out):
     o = _load(outcomes_path, "outcomes file")
     decisions = o.get("decisions", []) or []
     actions = o.get("actions", []) or []
+    feedback = o.get("material_feedback") or {}
+    problem = _feedback_problem(feedback)
+    if problem:
+        print(f"facilitate: FAIL — {problem}")
+        return 1
 
     # Minutes (decision log + action items with owner+due).
     md = [f"# {_lab(lang, 'minutes')} — {m.get('series_name') or m.get('objective', '')}",
@@ -193,6 +218,10 @@ def followup(manifest_path, outcomes_path, store_path, out):
         if key.startswith("kpi.") and isinstance(cell, dict):
             store["kpi_history"].setdefault(key, {})[instance] = (
                 "" if cell.get("value") is None else str(cell.get("value")))
+    # Learned material-shaping preferences (RFC-0007 §3, #67): fold the room's typed feedback
+    # into the store. Runs even with no feedback — the replace-by-instance cleanup must apply
+    # when a corrected outcomes file removed a block.
+    series.fold_feedback(store, ident.get("audience_altitude", ""), instance, feedback)
     series._write_store(store, store_path)
 
     if out:

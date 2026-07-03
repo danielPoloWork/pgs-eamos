@@ -123,6 +123,94 @@ def close(manifest_path, store_path):
     return 0
 
 
+def fold_feedback(store, altitude, instance, feedback):
+    """Fold a followup's material_feedback into store['preferences'] (RFC-0007 §3, #67).
+    Keyed altitude → deliverable → tag, each with instance provenance and a derived count.
+    Replace-by-instance (#56): this instance is first removed from every tag, so a re-run is
+    idempotent. `verdict: accepted` with no tags clears the deliverable's accumulated tags —
+    satisfaction is signal too (RFC-0007 §10-2)."""
+    prefs = store.get("preferences") or {}
+    alt = prefs.get(altitude) or {}
+    for dtype in list(alt):
+        for tag in list(alt[dtype]):
+            insts = [i for i in alt[dtype][tag].get("instances", []) if i != instance]
+            if insts:
+                alt[dtype][tag] = {"count": len(insts), "instances": insts}
+            else:
+                del alt[dtype][tag]
+        if not alt[dtype]:
+            del alt[dtype]
+    for dtype in sorted(feedback or {}):
+        block = feedback[dtype] or {}
+        tags = block.get("tags") or []
+        if block.get("verdict") == "accepted" and not tags:
+            alt.pop(dtype, None)
+            continue
+        for tag in tags:
+            rec = alt.setdefault(dtype, {}).setdefault(tag, {"count": 0, "instances": []})
+            rec["instances"].append(instance)
+            rec["count"] = len(rec["instances"])
+    if alt:
+        prefs[altitude] = alt
+    else:
+        prefs.pop(altitude, None)
+    if prefs:
+        store["preferences"] = prefs
+    else:
+        store.pop("preferences", None)
+
+
+def compile_preferences(store, manifest):
+    """Compile the accumulated tags for this manifest's altitude into a `preferences_applied`
+    proposal (RFC-0007 §4, #67). Deterministic: within a tag group the most recent instance wins
+    (ties break on tag name); deltas come from the vocabulary's fixed table; a max_slides_pct is
+    concretized against the archetype's altitude budget (tighten-only by construction). Returns {}
+    when there is nothing to propose. The proposal is only ever PRINTED — the maintainer writes it
+    into the manifest and confirms; the memory never applies itself."""
+    vocab = render.load_feedback_tags().get("tags") or {}
+    ident = manifest.get("identity") or {}
+    altitude = ident.get("audience_altitude", "")
+    alt = (store.get("preferences") or {}).get(altitude) or {}
+    if not alt or not vocab:
+        return {}
+    order = {inst: i for i, inst in enumerate(store.get("instances", []))}
+
+    def recency(tags, tag):
+        return max([order.get(i, -1) for i in tags[tag].get("instances", [])] or [-1])
+
+    budget = None
+    if ident.get("archetype"):
+        shaping = (render.load_archetype(ident["archetype"]).get("altitude_shaping", {}) or {})
+        budget = (shaping.get(altitude, {}) or {}).get("max_slides")
+
+    proposal, instances = {}, set()
+    for dtype in sorted(alt):
+        tags = alt[dtype]
+        winners = {}
+        for tag in sorted(tags):
+            g = (vocab.get(tag) or {}).get("group", tag)
+            if g not in winners or (recency(tags, tag), tag) > (recency(tags, winners[g]), winners[g]):
+                winners[g] = tag
+        deltas = {}
+        for tag in sorted(winners.values()):
+            deltas.update((vocab.get(tag) or {}).get("delta") or {})
+            instances.update(tags[tag].get("instances", []))
+        entry = {}
+        pct = deltas.get("max_slides_pct")
+        if isinstance(pct, int) and isinstance(budget, int):
+            entry["max_slides"] = max(1, budget * pct // 100)
+        if deltas.get("order_lead"):
+            entry["order_lead"] = deltas["order_lead"]
+        if entry:
+            proposal[dtype] = entry
+        if deltas.get("drop_deliverable"):
+            proposal.setdefault("drop_deliverables", []).append(dtype)
+    if not proposal:
+        return {}
+    proposal["from_instances"] = sorted(instances)
+    return proposal
+
+
 def open_(manifest_path, store_path, out):
     m = _load(manifest_path)
     ident = m.get("identity", {}) or {}
@@ -154,6 +242,9 @@ def open_(manifest_path, store_path, out):
                          if cf.get("rolling_risks") else [],
         "kpi_movement": movements if cf.get("kpi_history") else [],
     }
+    proposal = compile_preferences(store, m)
+    if proposal:                                 # only when there is something to propose (#67)
+        digest["preferences_proposal"] = proposal
     if out:
         os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
         with open(out, "w", encoding="utf-8", newline="\n") as fh:
@@ -172,12 +263,28 @@ def _print_digest(d):
     if d["open_actions"]:
         print("## Open actions carried in")
         for a in d["open_actions"]:
-            print(f"- [{a['id']}] {a['action']}  — context: {a['context']}")
+            line = f"- [{a['id']}] {a['action']}"
+            if a.get("context"):                   # close-derived actions carry the risk; followup ones don't
+                line += f"  — context: {a['context']}"
+            print(line)
         print()
     if d["kpi_movement"]:
         print("## KPI movement")
         for k in d["kpi_movement"]:
             print(f"- {k['label']}: {k['prior']} → {k['current']} {ARROW.get(k['direction'], '·')}")
+        print()
+    p = d.get("preferences_proposal")
+    if p:
+        print(f"## Learned preferences (from {', '.join(p['from_instances'])})")
+        print("Paste into the manifest and confirm it — the memory never applies itself (RFC-0007):")
+        print()
+        print("preferences_applied:")
+        print(f"  from_instances: [{', '.join(p['from_instances'])}]")
+        for dtype in sorted(k for k in p if k not in ("from_instances", "drop_deliverables")):
+            fields = ", ".join(f"{k}: {v}" for k, v in sorted(p[dtype].items()))
+            print(f"  {dtype}: {{ {fields} }}")
+        if p.get("drop_deliverables"):
+            print(f"  drop_deliverables: [{', '.join(sorted(p['drop_deliverables']))}]")
         print()
 
 

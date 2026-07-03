@@ -1,0 +1,23 @@
+# Room-feedback tag vocabulary (RFC-0007, #67) — the closed set of material-shaping signals a
+# human may capture in the outcomes file, AND the deterministic delta each tag compiles to.
+# Knowledge is data: adding a tag never touches code. Deltas are conservative by construction —
+# a preference may TIGHTEN shaping (fewer slides, reorder, drop a deliverable), never widen a
+# budget or violate deliverable_bounds (the preferences-valid gate enforces this).
+#
+# `group` makes conflicts decidable: within a group, the most recent instance's tag wins.
+# Delta keys:
+#   max_slides_pct   — scale the altitude's max_slides budget to N% (int; tighten-only)
+#   order_lead       — front the first section of this KIND in the composed structure
+#   drop_deliverable — propose dropping the tagged deliverable from the bundle
+#   (an empty delta = advisory-only: recorded, surfaced in the digest, no structural change)
+version: 1
+tags:
+  too_long:          { group: length, delta: { max_slides_pct: 75 } }
+  too_detailed:      { group: depth,  delta: { max_slides_pct: 85 } }
+  too_shallow:       { group: depth,  delta: {} }               # advisory: a budget never widens
+  lead_with_numbers: { group: lead,   delta: { order_lead: kpi_table } }
+  lead_with_risks:   { group: lead,   delta: { order_lead: risk_list } }
+  drop_deliverable:  { group: bundle, delta: { drop_deliverable: true } }
+  add_preread:       { group: bundle, delta: {} }               # advisory until a doc registry type exists
+  tone_more_formal:  { group: tone,   delta: {} }               # advisory-only in v1 (RFC-0007 §10-4)
+  tone_less_formal:  { group: tone,   delta: {} }
