@@ -207,6 +207,33 @@ class TestLabelsValid(unittest.TestCase):
         self.assertEqual(eamos_lint.gate_labels_valid(), [])    # es/fr gap is closed
 
 
+class TestPreferencesValid(unittest.TestCase):
+    """RFC-0007 §5 (#67): a learned preference tightens, never violates."""
+
+    def test_loosening_the_budget_fails(self):
+        m = load("qbr-c-level")
+        m["preferences_applied"] = {"presentation": {"max_slides": 20}}   # c-level budget is 12
+        self.assertIn("preferences-valid", run_gates(m))
+
+    def test_unknown_lead_kind_fails(self):
+        m = load("qbr-c-level")
+        m["preferences_applied"] = {"presentation": {"order_lead": "interpretive_dance"}}
+        self.assertIn("preferences-valid", run_gates(m))
+
+    def test_unhonored_drop_fails(self):
+        m = load("qbr-c-level")
+        m["preferences_applied"] = {"drop_deliverables": ["mindmap"]}     # mindmap still in the bundle
+        self.assertIn("preferences-valid", run_gates(m))
+
+    def test_valid_preferences_pass_every_gate(self):
+        m = load("qbr-c-level")
+        m["deliverables"] = [d for d in m["deliverables"] if d.get("type") != "mindmap"]
+        m["preferences_applied"] = {"from_instances": ["Q2-2026"],
+                                    "presentation": {"max_slides": 9, "order_lead": "kpi_table"},
+                                    "drop_deliverables": ["mindmap"]}
+        self.assertEqual(run_gates(m), set())
+
+
 class TestUserErrors(unittest.TestCase):
     def test_empty_identity_does_not_crash_gates(self):
         arch = render.load_archetype("review")

@@ -8,3 +8,8 @@ actions:
   - { action: "Negoziare la clausola di exit col vendor X", owner: "Legal", due: "2026-07-15" }
   - { action: "Avviare l'audit di sicurezza pre-go-live", owner: "Eng", due: "2026-07-31" }
 notes: "La revisione del churn è rinviata al QBR Q4 (dato ancora da verificare)."
+
+# How the room received the MATERIAL (RFC-0007, #67) — a closed tag vocabulary
+# (os/advisor/feedback-tags.yaml), never free text; folds into the store's preference memory.
+material_feedback:
+  presentation: { verdict: edited, tags: [too_long, lead_with_numbers] }

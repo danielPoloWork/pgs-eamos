@@ -1,6 +1,6 @@
 # RFC-0007: Preference memory — learning material-shaping preferences from room feedback
 
-- **Status:** Proposed (2026-07-02) — awaiting owner ratification. **Design-before-code** (AGENTS §7).
+- **Status:** Accepted (ratified by the owner, 2026-07-02). **Design-before-code** (AGENTS §7).
 - **Date:** 2026-07-02
 - **Author:** Enterprise Project Architect (tech-lead role)
 - **Reviewers:** Owner (`@danielPoloWork`)
@@ -208,3 +208,19 @@ evidence?), and it needs an ownership/consent model first.
    only the prose proposal?
 4. **`tone_*` tags** — advisory-only in v1 (recorded, surfaced, no delta). Promote to a delta once
    a structural lever exists (e.g. a formality-driven chrome variant)?
+
+## 11. Implementation notes (post-ratification)
+
+Three refinements made while implementing, all within the ratified design:
+
+- **`max_slides_pct` (int) instead of `max_slides_scale` (float)** — yamlmini deliberately keeps
+  unquoted decimals as strings (the version-number rule), so the vocabulary carries an integer
+  percentage (`75` = scale to 75%).
+- **`add_preread` is advisory-only in v1** — there is no `doc` deliverable registry type (the
+  pre-read is a projection of the presentation deck-IR), and the gate requires an added
+  deliverable to be registered. The tag is recorded and surfaced; it compiles to no delta until a
+  registry type exists.
+- **§5 "a dropped deliverable is in the manifest's bundle" clarified as drop-honored** — the gate
+  fails when a deliverable listed in `drop_deliverables` is *still* in the bundle (the learned
+  drop entered the manifest but was not honored). The inverse reading would force keeping the
+  deliverable just to declare its drop.

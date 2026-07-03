@@ -302,6 +302,75 @@ class TestRedaction(unittest.TestCase):
         self.assertNotIn("Rossi", cell["value"])
 
 
+class TestPreferenceMemory(unittest.TestCase):
+    """RFC-0007 (#67): capture → store → compile → propose, deterministic and human-gated."""
+
+    def _flow(self, d):
+        store = os.path.join(d, "s.json")
+        quiet(series.close, Q2, store)
+        quiet(facilitate.followup, Q3, OUTCOMES, store, os.path.join(d, "m.md"))
+        return store
+
+    def test_followup_folds_feedback_with_provenance(self):
+        with tempfile.TemporaryDirectory() as d:
+            s = _json(self._flow(d))
+            rec = s["preferences"]["c-level"]["presentation"]
+            self.assertEqual(rec["too_long"], {"count": 1, "instances": ["Q3-2026"]})
+            self.assertEqual(rec["lead_with_numbers"]["count"], 1)
+
+    def test_fold_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as d:
+            store = self._flow(d)
+            with open(store, "rb") as fh:
+                once = fh.read()
+            quiet(facilitate.followup, Q3, OUTCOMES, store, os.path.join(d, "m.md"))
+            with open(store, "rb") as fh:
+                self.assertEqual(fh.read(), once)          # followup ×2 == followup ×1 (#56 semantics)
+
+    def test_unknown_tag_fails_loudly(self):
+        with tempfile.TemporaryDirectory() as d:
+            bad = os.path.join(d, "o.yaml")
+            with open(bad, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write('instance: "Q3-2026"\nmaterial_feedback:\n'
+                         '  presentation: { verdict: edited, tags: [too_lonng] }\n')
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = facilitate.followup(Q3, bad, os.path.join(d, "s.json"), None)
+            self.assertEqual(rc, 1)
+            self.assertIn("too_lonng", buf.getvalue())     # a typo must not become a non-preference
+
+    def test_recency_wins_within_a_group_and_accepted_clears(self):
+        store = series._new_store("s")
+        store["instances"] = ["Q2-2026", "Q3-2026"]
+        series.fold_feedback(store, "c-level", "Q2-2026",
+                             {"presentation": {"verdict": "edited", "tags": ["lead_with_risks"]}})
+        series.fold_feedback(store, "c-level", "Q3-2026",
+                             {"presentation": {"verdict": "edited", "tags": ["lead_with_numbers", "too_long"]}})
+        m = _yaml(Q3)
+        p = series.compile_preferences(store, m)
+        self.assertEqual(p["presentation"]["order_lead"], "kpi_table")   # Q3 outranks Q2 in the lead group
+        self.assertEqual(p["presentation"]["max_slides"], 9)             # 12 × 75% (too_long)
+        self.assertEqual(p, series.compile_preferences(store, m))        # compile is deterministic
+        series.fold_feedback(store, "c-level", "Q4-2026",
+                             {"presentation": {"verdict": "accepted", "tags": []}})
+        self.assertNotIn("preferences", store)             # satisfaction clears the memory (§10-2)
+        self.assertEqual(series.compile_preferences(store, m), {})
+
+    def test_open_prints_the_ready_to_paste_proposal(self):
+        with tempfile.TemporaryDirectory() as d:
+            store = self._flow(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                series.open_(Q3, store, os.path.join(d, "cf.json"))
+            out = buf.getvalue()
+            self.assertIn("preferences_applied:", out)                   # ready to paste (§10-3)
+            self.assertIn("max_slides: 9", out)
+            self.assertIn("order_lead: kpi_table", out)
+            cf = _json(os.path.join(d, "cf.json"))
+            self.assertEqual(cf["preferences_proposal"]["presentation"]["max_slides"], 9)
+            self.assertEqual(cf["preferences_proposal"]["from_instances"], ["Q3-2026"])
+
+
 class TestUserErrors(unittest.TestCase):
     def test_unknown_archetype_exits_with_available_list(self):
         with self.assertRaises(SystemExit) as cm:

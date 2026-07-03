@@ -203,6 +203,32 @@ class TestDeliverableParams(unittest.TestCase):
         self.assertEqual(vert, emit_svg.build_mindmap_svg(mind_v))   # and stays deterministic
 
 
+class TestPreferenceOverlay(unittest.TestCase):
+    """RFC-0007 §4 (#67): the preferences_applied overlay — after altitude, tighten-only."""
+
+    def test_preferences_applied_shapes_the_deck(self):
+        m, arch = load("qbr-c-level")
+        base, _ = render.build_deck_ir(m, arch)
+        m["preferences_applied"] = {"from_instances": ["Q2-2026"],
+                                    "presentation": {"max_slides": 9, "order_lead": "kpi_table"}}
+        deck, _ = render.build_deck_ir(m, arch)
+        self.assertEqual(deck["slides"][0]["kind"], "kpi_table")         # the lead preference fronts KPIs
+        self.assertNotEqual([s["id"] for s in deck["slides"]], [s["id"] for s in base["slides"]])
+        self.assertEqual({s["id"] for s in deck["slides"]},
+                         {s["id"] for s in base["slides"]})              # nothing dropped (all required)
+
+    def test_preference_cap_never_drops_required(self):
+        arch = {"archetype": "t", "structure": [
+            {"id": "a", "kind": "summary", "required": True},
+            {"id": "b", "kind": "prose", "required": True},
+            {"id": "c", "kind": "prose"},
+            {"id": "d", "kind": "prose"}]}
+        m = {"identity": {"archetype": "t", "audience_altitude": "x"}, "content": {}, "inputs": {},
+             "preferences_applied": {"presentation": {"max_slides": 2}}}
+        deck, _ = render.build_deck_ir(m, arch)
+        self.assertEqual([s["id"] for s in deck["slides"]], ["a", "b"])  # required kept, optionals cut
+
+
 class TestDecisionContract(unittest.TestCase):
     def test_decision_contract_renders_through_md(self):
         import emit_md

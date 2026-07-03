@@ -19,7 +19,11 @@ The store is JSON (machine state, deterministic: `sort_keys`, `ensure_ascii=Fals
                       "context": "<the risk>",      // when derived from a planned ask (series close)
                       "owner": "<who>", "due": "<date>" } ],  // when captured in follow-up (M6)
   "rolling_risks": [ { "risk": "<text>", "since": "<instance>", "status": "open|closed" } ],
-  "kpi_history":  { "<kpi key>": { "<instance>": "<value>", "...": "..." } }
+  "kpi_history":  { "<kpi key>": { "<instance>": "<value>", "...": "..." } },
+  "preferences": {                                // learned material shaping (RFC-0007, #67); absent until fed
+    "<altitude>": { "<deliverable type>": {
+        "<tag>": { "count": 1, "instances": ["<instance>"] } } }   // tag ∈ os/advisor/feedback-tags.yaml
+  }
 }
 ```
 
@@ -39,3 +43,8 @@ The store is JSON (machine state, deterministic: `sort_keys`, `ensure_ascii=Fals
   M4 exit gate.
 - **One ledger still rules.** KPI values in the history are the instance's sourced ledger cells —
   the store never invents a number.
+- **Preference memory is proposed, never self-applied (RFC-0007).** `followup` folds the outcomes'
+  `material_feedback` tags into `preferences` (replace-by-instance, so re-runs are idempotent;
+  `verdict: accepted` with no tags clears a deliverable's tags). `open` only *prints* the compiled
+  `preferences_applied:` proposal — the maintainer writes it into the manifest and confirms
+  (`manifest-confirmed`); render reads the manifest, never this store.

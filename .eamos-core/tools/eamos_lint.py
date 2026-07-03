@@ -30,6 +30,9 @@ Gates:
   topology-valid             — a topology diagram's edges/kinds/patterns are declared and in-vocabulary.
   labels-valid               — every language in os/localization/labels.yaml defines every chrome key
                                the en fallback defines (a language is supported when ALL chrome exists).
+  preferences-valid          — a preferences_applied block (RFC-0007) tightens, never violates: caps
+                               within the altitude budget, lead kinds in the composed structure,
+                               drops honored, adds registered.
 """
 
 import os
@@ -304,6 +307,55 @@ def gate_labels_valid():
     return findings
 
 
+def gate_preferences_valid(manifest, archetype):
+    """Learned-preference integrity (RFC-0007 §5, #67): a `preferences_applied` block may TIGHTEN
+    shaping, never violate it. Checks: every deliverable key is registered; max_slides only
+    tightens the altitude budget; order_lead names a kind of the composed structure; a declared
+    drop was honored (the deliverable is out of the bundle); an added deliverable has a registry
+    entry. Structural + decidable; an absent block passes."""
+    findings = []
+    block = manifest.get("preferences_applied")
+    if not isinstance(block, dict):
+        return findings
+    ident = manifest.get("identity") or {}
+    altitude = ident.get("audience_altitude", "")
+    budget = ((archetype.get("altitude_shaping", {}) or {}).get(altitude, {}) or {}).get("max_slides")
+    bundle = {d.get("type") for d in manifest.get("deliverables", []) or [] if isinstance(d, dict)}
+    kinds = {s.get("kind") for s in render.apply_function(
+        archetype.get("structure", []) or [], render.load_function(ident.get("function", "")))}
+    meta = {"from_instances", "drop_deliverables", "add_deliverables"}
+    for key in sorted(k for k in block if k not in meta):
+        if render.load_deliverable(key) is None:
+            findings.append(("preferences-valid",
+                             f"preferences_applied.{key} is not a registered deliverable type"))
+            continue
+        entry = block.get(key) or {}
+        for field in sorted(entry):
+            if field not in ("max_slides", "order_lead"):
+                findings.append(("preferences-valid",
+                                 f"preferences_applied.{key}.{field} is not a known preference delta"))
+        cap = entry.get("max_slides")
+        if cap is not None and (not isinstance(cap, int)
+                                or (isinstance(budget, int) and cap > budget)):
+            findings.append(("preferences-valid",
+                             f"preferences_applied.{key}.max_slides={cap} loosens the {altitude} "
+                             f"budget of {budget} (a preference tightens, never violates)"))
+        lead = entry.get("order_lead")
+        if lead and lead not in kinds:
+            findings.append(("preferences-valid",
+                             f"preferences_applied.{key}.order_lead='{lead}' names no section kind "
+                             "in the composed structure"))
+    for d in block.get("drop_deliverables") or []:
+        if d in bundle:
+            findings.append(("preferences-valid",
+                             f"drop_deliverables: '{d}' is still in the manifest's bundle "
+                             "(the learned drop was not honored)"))
+    for d in block.get("add_deliverables") or []:
+        if render.load_deliverable(d) is None:
+            findings.append(("preferences-valid", f"add_deliverables: '{d}' has no registry entry"))
+    return findings
+
+
 def gate_registry_params(manifest):
     """Every deliverable's params are within the registry's declared enums (RFC-0002 §4)."""
     findings = []
@@ -395,6 +447,7 @@ def run_all(manifest, archetype, deck_ir, acc, ledger):
     findings += gate_questions_valid()
     findings += gate_topology_valid(manifest)
     findings += gate_labels_valid()
+    findings += gate_preferences_valid(manifest, archetype)
     findings += gate_registry_params(manifest)
     findings += gate_rubric(manifest, deck_ir, {g for g, _ in findings})
     findings += gate_confidentiality(manifest, {g for g, _ in findings})

@@ -31,6 +31,7 @@ POLICY = os.path.join(CORE, "orchestrator", "os", "confidentiality", "policy.yam
 CLASSIFICATION = os.path.join(CORE, "orchestrator", "os", "intake", "classification.yaml")
 QUESTIONS = os.path.join(CORE, "orchestrator", "os", "intake", "questions.yaml")
 ROUTING = os.path.join(CORE, "orchestrator", "os", "intake", "routing.yaml")
+FEEDBACK_TAGS = os.path.join(CORE, "orchestrator", "os", "advisor", "feedback-tags.yaml")
 
 BIND_RE = re.compile(r"\{\{\s*([a-z][a-z0-9_.]*)\s*\}\}")
 # The IR contract version (#62), stamped into every projection. The IR is a persisted artifact
@@ -147,17 +148,37 @@ def apply_overlays(structure, shaping):
     if order:
         rank = {sid: i for i, sid in enumerate(order)}
         secs.sort(key=lambda s: rank.get(s["id"], len(order)))   # stable: unlisted keep order
-    cap = shaping.get("max_slides")
-    if isinstance(cap, int) and len(secs) > cap:
-        kept, opt_budget = [], cap - sum(1 for s in secs if s.get("required"))
-        for s in secs:
-            if s.get("required"):
-                kept.append(s)
-            elif opt_budget > 0:
-                kept.append(s)
-                opt_budget -= 1
-        secs = kept
-    return secs
+    return _cap_sections(secs, shaping.get("max_slides"))
+
+
+def _cap_sections(secs, cap):
+    """Cap to `cap` sections without ever dropping a `required` one (the completeness invariant)."""
+    if not (isinstance(cap, int) and len(secs) > cap):
+        return secs
+    kept, opt_budget = [], cap - sum(1 for s in secs if s.get("required"))
+    for s in secs:
+        if s.get("required"):
+            kept.append(s)
+        elif opt_budget > 0:
+            kept.append(s)
+            opt_budget -= 1
+    return kept
+
+
+def apply_preferences(secs, pref):
+    """The learned-preference overlay (RFC-0007 §4, #67) — applied AFTER the altitude overlay,
+    from the manifest's explicit `preferences_applied` block, never from the series store: the
+    manifest stays the single source of truth and `manifest-confirmed` covers the adaptation.
+    Tighten-only: `max_slides` only caps further, `order_lead` fronts the first section of the
+    named kind, and a `required` section is never dropped."""
+    if not isinstance(pref, dict) or not pref:
+        return secs
+    lead = pref.get("order_lead")
+    if lead:
+        idx = next((i for i, s in enumerate(secs) if s.get("kind") == lead), None)
+        if idx is not None:
+            secs = [secs[idx]] + secs[:idx] + secs[idx + 1:]
+    return _cap_sections(secs, pref.get("max_slides"))
 
 
 def _build_section(sec, content, ledger, acc, lang):
@@ -263,6 +284,14 @@ def load_routing():
         return yamlmini.load_yaml(fh.read())
 
 
+def load_feedback_tags():
+    """The room-feedback tag vocabulary + compile table (RFC-0007, #67), or {} if absent."""
+    if not os.path.exists(FEEDBACK_TAGS):
+        return {}
+    with open(FEEDBACK_TAGS, encoding="utf-8") as fh:
+        return yamlmini.load_yaml(fh.read())
+
+
 def redact_tags_for(manifest, policy):
     """The cell tags to redact for this meeting: every active regime's redact_tags + `sensitive`."""
     regimes = (manifest.get("context", {}) or {}).get("regulatory", []) or []
@@ -351,9 +380,11 @@ def build_deck_ir(manifest, archetype, altitude=None, function=None):
     deliverables = manifest.get("deliverables", []) or [{"type": "presentation"}]
     deliverable = deliverables[0] if isinstance(deliverables, list) and deliverables else {}
 
-    # Compose: archetype structure + function overlay (axis 3) + altitude overlay (axis 2), then
-    # render each section. Deterministic; never a cross-product (RFC-0001 §3).
+    # Compose: archetype structure + function overlay (axis 3) + altitude overlay (axis 2) +
+    # learned-preference overlay (RFC-0007, #67), then render each section. Deterministic;
+    # never a cross-product (RFC-0001 §3).
     effective = composed_structure(archetype, function, shaping)
+    effective = apply_preferences(effective, (manifest.get("preferences_applied") or {}).get("presentation"))
     slides = [_build_section(sec, content, ledger, acc, lang) for sec in effective]
 
     review_appendix = [

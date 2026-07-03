@@ -22,6 +22,7 @@ top_level:
   - discovery_intake
   - classification
   - series_name
+  - preferences_applied     # learned material-shaping deltas, human-confirmed (RFC-0007, #67)
 
 # identity — the axis resolution. `archetype` and `audience_altitude` are REQUIRED explicitly:
 # a defaulted archetype is a guess, not intake (#59).
